@@ -1,0 +1,50 @@
+{
+    "name": "apn-ra/asterisk-pbx-manager",
+    "description": "Laravel package for Asterisk PBX management via AMI",
+    "type": "library",
+    "keywords": ["laravel", "asterisk", "pbx", "ami", "pami", "voip", "telephony"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "APN-RA",
+            "email": "contact@apn-ra.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "illuminate/support": "^12.0",
+        "illuminate/config": "^12.0",
+        "illuminate/events": "^12.0",
+        "illuminate/database": "^12.0",
+        "illuminate/console": "^12.0",
+        "illuminate/log": "^12.0",
+        "marcelog/pami": "^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "orchestra/testbench": "^8.0",
+        "mockery/mockery": "^1.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "AsteriskPbxManager\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AsteriskPbxManager\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "AsteriskPbxManager\\AsteriskPbxManagerServiceProvider"
+            ],
+            "aliases": {
+                "AsteriskManager": "AsteriskPbxManager\\Facades\\AsteriskManager"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
