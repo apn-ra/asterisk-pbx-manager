@@ -25,7 +25,6 @@ yarn-error.log
 /.vscode
 /.zed
 .junie
-composer.lock
 /vendor/
 node_modules/
 
