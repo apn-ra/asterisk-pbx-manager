@@ -756,7 +756,7 @@ Common labels used:
 If you discover a security vulnerability, please:
 
 1. **DO NOT** create a public issue
-2. **Email** security@apn-ra.com with details
+2. **Email** ronniel.castanito@apntelecom.com with details
 3. **Include** steps to reproduce
 4. **Wait** for confirmation before public disclosure
 
