@@ -27,7 +27,7 @@ yarn-error.log
 .junie
 /vendor/
 node_modules/
-
+composer.lock
 # Laravel 4 specific
 bootstrap/compiled.php
 app/storage/
