@@ -10,9 +10,9 @@ updates:
       timezone: "UTC"
     open-pull-requests-limit: 10
     reviewers:
-      - "maintainer-username"  # Replace with actual maintainer
+      - "grimange"  # Replace with actual maintainer
     assignees:
-      - "maintainer-username"  # Replace with actual maintainer
+      - "apn-ra"  # Replace with actual maintainer
     commit-message:
       prefix: "deps"
       prefix-development: "deps-dev"
@@ -69,9 +69,9 @@ updates:
       timezone: "UTC"
     open-pull-requests-limit: 5
     reviewers:
-      - "maintainer-username"  # Replace with actual maintainer
+      - "grimange"  # Replace with actual maintainer
     assignees:
-      - "maintainer-username"  # Replace with actual maintainer
+      - "apn-ra"  # Replace with actual maintainer
     commit-message:
       prefix: "ci"
       include: "scope"
