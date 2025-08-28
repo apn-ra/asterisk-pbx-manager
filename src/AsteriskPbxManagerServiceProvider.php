@@ -11,7 +11,11 @@ use AsteriskPbxManager\Services\ActionExecutor;
 use AsteriskPbxManager\Services\ConfigurationValidator;
 use AsteriskPbxManager\Services\AmiInputSanitizer;
 use AsteriskPbxManager\Services\BroadcastAuthService;
-use AsteriskPbxManager\Services\AuditLogger;
+use AsteriskPbxManager\Services\AuditLoggingService;
+use AsteriskPbxManager\Services\HealthCheckService;
+use AsteriskPbxManager\Services\QueueManagerService;
+use AsteriskPbxManager\Services\ChannelManagerService;
+use AsteriskPbxManager\Services\ConnectionPoolManager;
 use AsteriskPbxManager\Commands\AsteriskStatus;
 use AsteriskPbxManager\Commands\MonitorEvents;
 use AsteriskPbxManager\Listeners\LogCallEvent;
@@ -42,6 +46,11 @@ class AsteriskPbxManagerServiceProvider extends ServiceProvider
             return new AmiInputSanitizer();
         });
 
+        // Bind Audit Logging Service
+        $this->app->singleton(AuditLoggingService::class, function ($app) {
+            return new AuditLoggingService();
+        });
+
         // Bind PAMI Client with comprehensive validation
         $this->app->singleton(ClientImpl::class, function ($app) {
             $config = $app['config']['asterisk-pbx-manager'];
@@ -57,7 +66,8 @@ class AsteriskPbxManagerServiceProvider extends ServiceProvider
         $this->app->singleton('asterisk-manager', function ($app) {
             return new AsteriskManagerService(
                 $app->make(ClientImpl::class),
-                $app->make(AmiInputSanitizer::class)
+                $app->make(AmiInputSanitizer::class),
+                $app->make(AuditLoggingService::class)
             );
         });
 
@@ -73,6 +83,39 @@ class AsteriskPbxManagerServiceProvider extends ServiceProvider
         // Bind Broadcast Authentication Service
         $this->app->singleton(BroadcastAuthService::class, function ($app) {
             return new BroadcastAuthService($app['auth']);
+        });
+
+        // Bind Queue Manager Service
+        $this->app->singleton(QueueManagerService::class, function ($app) {
+            return new QueueManagerService(
+                $app->make('asterisk-manager'),
+                $app->make(AmiInputSanitizer::class)
+            );
+        });
+
+        // Bind Channel Manager Service
+        $this->app->singleton(ChannelManagerService::class, function ($app) {
+            return new ChannelManagerService(
+                $app->make('asterisk-manager'),
+                $app->make(AmiInputSanitizer::class)
+            );
+        });
+
+        // Bind Health Check Service
+        $this->app->singleton(HealthCheckService::class, function ($app) {
+            return new HealthCheckService(
+                $app->make('asterisk-manager'),
+                $app->make(QueueManagerService::class),
+                $app->make(ChannelManagerService::class)
+            );
+        });
+
+        // Bind Connection Pool Manager
+        $this->app->singleton(ConnectionPoolManager::class, function ($app) {
+            return new ConnectionPoolManager(
+                $app->make(AmiInputSanitizer::class),
+                $app->make(AuditLoggingService::class)
+            );
         });
 
         // Register facade
@@ -96,6 +139,9 @@ class AsteriskPbxManagerServiceProvider extends ServiceProvider
 
         // Load migrations
         $this->loadMigrationsFrom(__DIR__.'/Migrations');
+
+        // Load routes
+        $this->loadRoutesFrom(__DIR__.'/Http/routes.php');
 
         // Register commands
         if ($this->app->runningInConsole()) {
@@ -147,6 +193,11 @@ class AsteriskPbxManagerServiceProvider extends ServiceProvider
             ConfigurationValidator::class,
             AmiInputSanitizer::class,
             BroadcastAuthService::class,
+            AuditLoggingService::class,
+            HealthCheckService::class,
+            QueueManagerService::class,
+            ChannelManagerService::class,
+            ConnectionPoolManager::class,
             ClientImpl::class,
         ];
     }

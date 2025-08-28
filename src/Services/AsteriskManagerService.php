@@ -13,6 +13,7 @@ use AsteriskPbxManager\Exceptions\AsteriskConnectionException;
 use AsteriskPbxManager\Exceptions\ActionExecutionException;
 use AsteriskPbxManager\Events\AsteriskEvent;
 use AsteriskPbxManager\Services\AmiInputSanitizer;
+use AsteriskPbxManager\Services\AuditLoggingService;
 
 /**
  * Main service class for Asterisk Manager Interface operations.
@@ -69,15 +70,24 @@ class AsteriskManagerService
     protected AmiInputSanitizer $sanitizer;
 
     /**
+     * Audit logging service instance.
+     *
+     * @var AuditLoggingService
+     */
+    protected AuditLoggingService $auditLogger;
+
+    /**
      * Create a new Asterisk Manager Service instance.
      *
      * @param ClientImpl $client
      * @param AmiInputSanitizer $sanitizer
+     * @param AuditLoggingService $auditLogger
      */
-    public function __construct(ClientImpl $client, AmiInputSanitizer $sanitizer)
+    public function __construct(ClientImpl $client, AmiInputSanitizer $sanitizer, AuditLoggingService $auditLogger)
     {
         $this->client = $client;
         $this->sanitizer = $sanitizer;
+        $this->auditLogger = $auditLogger;
         $this->maxReconnectionAttempts = config('asterisk-pbx-manager.reconnection.max_attempts', 3);
         $this->reconnectionDelay = config('asterisk-pbx-manager.reconnection.delay_seconds', 5);
         
@@ -92,22 +102,44 @@ class AsteriskManagerService
      */
     public function connect(): bool
     {
+        $startTime = microtime(true);
+        
         try {
             $this->client->open();
             $this->connected = true;
             $this->reconnectionAttempts = 0;
             
+            $executionTime = microtime(true) - $startTime;
+            
+            // Log audit event for successful connection
+            $this->auditLogger->logConnection('connect', true, [
+                'host' => config('asterisk-pbx-manager.connection.host'),
+                'port' => config('asterisk-pbx-manager.connection.port'),
+                'attempts' => $this->reconnectionAttempts + 1,
+            ]);
+            
             $this->logInfo('Connected to Asterisk Manager Interface', [
                 'attempts' => $this->reconnectionAttempts + 1,
+                'execution_time' => $executionTime,
             ]);
             
             return true;
         } catch (\Exception $e) {
             $this->connected = false;
+            $executionTime = microtime(true) - $startTime;
+            
+            // Log audit event for failed connection
+            $this->auditLogger->logConnection('connect', false, [
+                'host' => config('asterisk-pbx-manager.connection.host'),
+                'port' => config('asterisk-pbx-manager.connection.port'),
+                'attempts' => $this->reconnectionAttempts + 1,
+                'error' => $e->getMessage(),
+            ]);
             
             $this->logError('Failed to connect to Asterisk AMI', [
                 'error' => $e->getMessage(),
                 'attempts' => $this->reconnectionAttempts + 1,
+                'execution_time' => $executionTime,
             ]);
             
             throw AsteriskConnectionException::networkError(
@@ -125,17 +157,48 @@ class AsteriskManagerService
      */
     public function disconnect(): bool
     {
+        $startTime = microtime(true);
+        
         try {
             if ($this->connected) {
                 $this->client->close();
                 $this->connected = false;
                 
-                $this->logInfo('Disconnected from Asterisk Manager Interface');
+                $executionTime = microtime(true) - $startTime;
+                
+                // Log audit event for successful disconnection
+                $this->auditLogger->logConnection('disconnect', true, [
+                    'host' => config('asterisk-pbx-manager.connection.host'),
+                    'port' => config('asterisk-pbx-manager.connection.port'),
+                ]);
+                
+                $this->logInfo('Disconnected from Asterisk Manager Interface', [
+                    'execution_time' => $executionTime,
+                ]);
+            } else {
+                // Log audit event for disconnect attempt when not connected
+                $this->auditLogger->logConnection('disconnect', true, [
+                    'host' => config('asterisk-pbx-manager.connection.host'),
+                    'port' => config('asterisk-pbx-manager.connection.port'),
+                    'note' => 'Already disconnected',
+                ]);
             }
             
             return true;
         } catch (\Exception $e) {
-            $this->logError('Error during disconnection', ['error' => $e->getMessage()]);
+            $executionTime = microtime(true) - $startTime;
+            
+            // Log audit event for failed disconnection
+            $this->auditLogger->logConnection('disconnect', false, [
+                'host' => config('asterisk-pbx-manager.connection.host'),
+                'port' => config('asterisk-pbx-manager.connection.port'),
+                'error' => $e->getMessage(),
+            ]);
+            
+            $this->logError('Error during disconnection', [
+                'error' => $e->getMessage(),
+                'execution_time' => $executionTime,
+            ]);
             return false;
         }
     }
@@ -201,6 +264,9 @@ class AsteriskManagerService
      */
     public function send(ActionMessage $action): ResponseMessage
     {
+        $startTime = microtime(true);
+        $response = null;
+        
         if (!$this->isConnected()) {
             if (!$this->reconnect()) {
                 throw new AsteriskConnectionException('Not connected to AMI and reconnection failed');
@@ -214,19 +280,42 @@ class AsteriskManagerService
             ]);
 
             $response = $this->client->send($action);
+            $executionTime = microtime(true) - $startTime;
 
             if (!$response->isSuccess()) {
+                // Log audit event for failed action (response received but indicates failure)
+                $this->auditLogger->logAction($action, $response, $executionTime, [
+                    'failure_reason' => 'action_failed',
+                    'response_message' => $response->getMessage(),
+                ]);
+                
                 throw ActionExecutionException::actionFailed($action, $response);
             }
+
+            // Log audit event for successful action
+            $this->auditLogger->logAction($action, $response, $executionTime, [
+                'success' => true,
+                'response_message' => $response->getMessage(),
+            ]);
 
             $this->logInfo('AMI action completed successfully', [
                 'action' => $action->getAction(),
                 'action_id' => $action->getActionId(),
                 'response_message' => $response->getMessage(),
+                'execution_time' => $executionTime,
             ]);
 
             return $response;
         } catch (\Exception $e) {
+            $executionTime = microtime(true) - $startTime;
+            
+            // Log audit event for exception during action execution
+            $this->auditLogger->logAction($action, $response, $executionTime, [
+                'failure_reason' => 'exception',
+                'error_type' => get_class($e),
+                'error_message' => $e->getMessage(),
+            ]);
+            
             if ($e instanceof ActionExecutionException) {
                 throw $e;
             }
@@ -234,6 +323,7 @@ class AsteriskManagerService
             $this->logError('Error sending AMI action', [
                 'action' => $action->getAction(),
                 'error' => $e->getMessage(),
+                'execution_time' => $executionTime,
             ]);
 
             throw new ActionExecutionException(
