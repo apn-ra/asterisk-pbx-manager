@@ -175,7 +175,7 @@ jobs:
         ~/.composer/vendor/bin/psalm --config=psalm-security.xml --report=psalm-security.txt 2>&1 | tee -a php-security.log || true
 
     - name: Upload security scan results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: security-scan-results
@@ -287,7 +287,7 @@ jobs:
         echo "✅ Secret scanning completed" | tee -a secret-scan.log
 
     - name: Upload secret scan results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: secret-scan-results
@@ -343,7 +343,7 @@ jobs:
         echo "Security policy compliance check completed. Missing files: $MISSING_FILES" | tee -a policy-check.log
 
     - name: Upload policy check results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: security-policy-results
