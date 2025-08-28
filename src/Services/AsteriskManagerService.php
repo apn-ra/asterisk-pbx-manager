@@ -409,9 +409,13 @@ class AsteriskManagerService
      */
     protected function logInfo(string $message, array $context = []): void
     {
-        if (config('asterisk-pbx-manager.logging.enabled', true)) {
-            Log::channel(config('asterisk-pbx-manager.logging.channel', 'default'))
-               ->info($message, $context);
+        try {
+            if (config('asterisk-pbx-manager.logging.enabled', true)) {
+                Log::channel(config('asterisk-pbx-manager.logging.channel', 'default'))
+                   ->info($message, $context);
+            }
+        } catch (\Exception $e) {
+            // Silently ignore logging errors during testing or when Laravel context is unavailable
         }
     }
 
@@ -423,9 +427,13 @@ class AsteriskManagerService
      */
     protected function logError(string $message, array $context = []): void
     {
-        if (config('asterisk-pbx-manager.logging.enabled', true)) {
-            Log::channel(config('asterisk-pbx-manager.logging.channel', 'default'))
-               ->error($message, $context);
+        try {
+            if (config('asterisk-pbx-manager.logging.enabled', true)) {
+                Log::channel(config('asterisk-pbx-manager.logging.channel', 'default'))
+                   ->error($message, $context);
+            }
+        } catch (\Exception $e) {
+            // Silently ignore logging errors during testing or when Laravel context is unavailable
         }
     }
 

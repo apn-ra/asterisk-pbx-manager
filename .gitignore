@@ -6,6 +6,7 @@
 /storage/*.key
 /storage/pail
 /vendor
+/build
 .env
 .env.backup
 .env.production
@@ -15,6 +16,7 @@
 Homestead.json
 Homestead.yaml
 npm-debug.log
+phpunit.xml
 yarn-error.log
 /auth.json
 /.fleet
@@ -23,3 +25,4 @@ yarn-error.log
 /.vscode
 /.zed
 .junie
+composer.lock

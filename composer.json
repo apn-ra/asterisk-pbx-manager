@@ -1,15 +1,23 @@
 {
     "name": "apn-ra/asterisk-pbx-manager",
-    "description": "Laravel package for Asterisk PBX management via AMI",
+    "description": "Comprehensive Laravel package for Asterisk PBX management via AMI with event processing, queue management, and real-time monitoring",
     "type": "library",
-    "keywords": ["laravel", "asterisk", "pbx", "ami", "pami", "voip", "telephony"],
+    "keywords": ["laravel", "asterisk", "pbx", "ami", "pami", "voip", "telephony", "call-center", "queue-management", "real-time", "events"],
     "license": "MIT",
+    "homepage": "https://github.com/apn-ra/asterisk-pbx-manager",
+    "readme": "README.md",
     "authors": [
         {
-            "name": "APN-RA",
-            "email": "contact@apn-ra.com"
+            "name": "APN RA",
+            "email": "ronniel.castanito@apntelecom.com",
+            "role": "Developer"
         }
     ],
+    "support": {
+        "issues": "https://github.com/apn-ra/asterisk-pbx-manager/issues",
+        "source": "https://github.com/apn-ra/asterisk-pbx-manager",
+        "docs": "https://github.com/apn-ra/asterisk-pbx-manager/blob/main/README.md"
+    },
     "require": {
         "php": "^8.4",
         "illuminate/support": "^12.0",
@@ -18,6 +26,7 @@
         "illuminate/database": "^12.0",
         "illuminate/console": "^12.0",
         "illuminate/log": "^12.0",
+        "illuminate/broadcasting": "^12.0",
         "marcelog/pami": "^2.0"
     },
     "require-dev": {
