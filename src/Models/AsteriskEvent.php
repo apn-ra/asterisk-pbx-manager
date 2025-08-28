@@ -2,12 +2,12 @@
 
 namespace AsteriskPbxManager\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Carbon\Carbon;
 
 class AsteriskEvent extends Model
 {
@@ -92,35 +92,35 @@ class AsteriskEvent extends Model
         'error_message',
         'call_log_id',
         'parent_event_id',
-        'correlation_id'
+        'correlation_id',
     ];
 
     /**
      * The attributes that should be cast.
      */
     protected $casts = [
-        'event_timestamp' => 'datetime',
-        'received_at' => 'datetime',
-        'processed_at' => 'datetime',
-        'penalty' => 'integer',
-        'calls_taken' => 'integer',
-        'last_call' => 'integer',
-        'last_pause' => 'integer',
-        'ring_time' => 'integer',
-        'talk_time' => 'integer',
-        'hold_time' => 'integer',
-        'cause_code' => 'integer',
-        'channel_state' => 'integer',
-        'duration_ms' => 'integer',
+        'event_timestamp'     => 'datetime',
+        'received_at'         => 'datetime',
+        'processed_at'        => 'datetime',
+        'penalty'             => 'integer',
+        'calls_taken'         => 'integer',
+        'last_call'           => 'integer',
+        'last_pause'          => 'integer',
+        'ring_time'           => 'integer',
+        'talk_time'           => 'integer',
+        'hold_time'           => 'integer',
+        'cause_code'          => 'integer',
+        'channel_state'       => 'integer',
+        'duration_ms'         => 'integer',
         'bridge_num_channels' => 'integer',
-        'in_call' => 'boolean',
-        'paused' => 'boolean',
-        'is_significant' => 'boolean',
-        'needs_action' => 'boolean',
-        'event_data' => 'array',
-        'parsed_data' => 'array',
-        'metadata' => 'array',
-        'server_ip' => 'encrypted',
+        'in_call'             => 'boolean',
+        'paused'              => 'boolean',
+        'is_significant'      => 'boolean',
+        'needs_action'        => 'boolean',
+        'event_data'          => 'array',
+        'parsed_data'         => 'array',
+        'metadata'            => 'array',
+        'server_ip'           => 'encrypted',
     ];
 
     /**
@@ -139,7 +139,7 @@ class AsteriskEvent extends Model
         'duration_formatted',
         'is_call_event',
         'is_queue_event',
-        'is_bridge_event'
+        'is_bridge_event',
     ];
 
     /**
@@ -269,7 +269,7 @@ class AsteriskEvent extends Model
     {
         return $query->whereIn('event_name', [
             'DialBegin', 'DialEnd', 'Hangup', 'Bridge', 'Unbridge',
-            'NewCallerid', 'NewConnectedLine', 'NewExten', 'NewState'
+            'NewCallerid', 'NewConnectedLine', 'NewExten', 'NewState',
         ]);
     }
 
@@ -280,7 +280,7 @@ class AsteriskEvent extends Model
     {
         return $query->whereIn('event_name', [
             'QueueMemberAdded', 'QueueMemberRemoved', 'QueueMemberPause',
-            'QueueCallerJoin', 'QueueCallerLeave', 'AgentConnect', 'AgentComplete'
+            'QueueCallerJoin', 'QueueCallerLeave', 'AgentConnect', 'AgentComplete',
         ]);
     }
 
@@ -290,7 +290,7 @@ class AsteriskEvent extends Model
     public function scopeBridgeEvents(Builder $query): Builder
     {
         return $query->whereIn('event_name', [
-            'BridgeCreate', 'BridgeDestroy', 'BridgeEnter', 'BridgeLeave'
+            'BridgeCreate', 'BridgeDestroy', 'BridgeEnter', 'BridgeLeave',
         ]);
     }
 
@@ -347,7 +347,7 @@ class AsteriskEvent extends Model
      */
     public function getEventCategoryAttribute(): string
     {
-        return match($this->event_name) {
+        return match ($this->event_name) {
             'DialBegin', 'DialEnd', 'Hangup', 'NewCallerid', 'NewConnectedLine' => 'call',
             'BridgeCreate', 'BridgeDestroy', 'BridgeEnter', 'BridgeLeave' => 'bridge',
             'QueueMemberAdded', 'QueueMemberRemoved', 'QueueMemberPause', 'QueueCallerJoin', 'QueueCallerLeave' => 'queue',
@@ -422,7 +422,7 @@ class AsteriskEvent extends Model
     {
         return $this->update([
             'processing_status' => 'processed',
-            'processed_at' => now()
+            'processed_at'      => now(),
         ]);
     }
 
@@ -433,8 +433,8 @@ class AsteriskEvent extends Model
     {
         return $this->update([
             'processing_status' => 'failed',
-            'error_message' => $errorMessage,
-            'processed_at' => now()
+            'error_message'     => $errorMessage,
+            'processed_at'      => now(),
         ]);
     }
 
@@ -462,21 +462,21 @@ class AsteriskEvent extends Model
         $query = static::dateRange($startDate, $endDate);
 
         return [
-            'total_events' => $query->count(),
+            'total_events'       => $query->count(),
             'significant_events' => $query->significant()->count(),
-            'processed_events' => $query->processed()->count(),
-            'pending_events' => $query->pending()->count(),
-            'failed_events' => $query->failed()->count(),
-            'call_events' => $query->callEvents()->count(),
-            'queue_events' => $query->queueEvents()->count(),
-            'bridge_events' => $query->bridgeEvents()->count(),
+            'processed_events'   => $query->processed()->count(),
+            'pending_events'     => $query->pending()->count(),
+            'failed_events'      => $query->failed()->count(),
+            'call_events'        => $query->callEvents()->count(),
+            'queue_events'       => $query->queueEvents()->count(),
+            'bridge_events'      => $query->bridgeEvents()->count(),
             'events_with_errors' => $query->withErrors()->count(),
-            'events_by_type' => $query->selectRaw('event_name, COUNT(*) as count')
+            'events_by_type'     => $query->selectRaw('event_name, COUNT(*) as count')
                                     ->groupBy('event_name')
                                     ->orderBy('count', 'desc')
                                     ->limit(10)
                                     ->pluck('count', 'event_name')
-                                    ->toArray()
+                                    ->toArray(),
         ];
     }
 
@@ -495,7 +495,7 @@ class AsteriskEvent extends Model
             ->get();
 
         $hourlyData = array_fill(0, 24, 0);
-        
+
         foreach ($events as $event) {
             $hourlyData[$event->hour] = $event->count;
         }
@@ -518,7 +518,7 @@ class AsteriskEvent extends Model
      */
     public static function generateCorrelationId(): string
     {
-        return 'corr_' . uniqid() . '_' . time();
+        return 'corr_'.uniqid().'_'.time();
     }
 
     /**

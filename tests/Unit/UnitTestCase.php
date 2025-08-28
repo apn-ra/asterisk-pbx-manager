@@ -2,9 +2,9 @@
 
 namespace AsteriskPbxManager\Tests\Unit;
 
-use Orchestra\Testbench\TestCase;
 use AsteriskPbxManager\AsteriskPbxManagerServiceProvider;
 use Mockery;
+use Orchestra\Testbench\TestCase;
 
 /**
  * Base test case for unit tests with Laravel integration.
@@ -15,6 +15,7 @@ abstract class UnitTestCase extends TestCase
      * Get package providers.
      *
      * @param \Illuminate\Foundation\Application $app
+     *
      * @return array
      */
     protected function getPackageProviders($app): array
@@ -28,6 +29,7 @@ abstract class UnitTestCase extends TestCase
      * Define environment setup.
      *
      * @param \Illuminate\Foundation\Application $app
+     *
      * @return void
      */
     protected function getEnvironmentSetUp($app): void
@@ -35,30 +37,30 @@ abstract class UnitTestCase extends TestCase
         // Setup default database to use sqlite :memory:
         $app['config']->set('database.default', 'testbench');
         $app['config']->set('database.connections.testbench', [
-            'driver' => 'sqlite',
+            'driver'   => 'sqlite',
             'database' => ':memory:',
-            'prefix' => '',
+            'prefix'   => '',
         ]);
 
         // Setup basic Asterisk configuration
         $app['config']->set('asterisk-pbx-manager.connection', [
-            'host' => '127.0.0.1',
-            'port' => 5038,
-            'username' => 'admin',
-            'secret' => 'test',
+            'host'            => '127.0.0.1',
+            'port'            => 5038,
+            'username'        => 'admin',
+            'secret'          => 'test',
             'connect_timeout' => 10,
-            'read_timeout' => 10,
-            'scheme' => 'tcp://',
+            'read_timeout'    => 10,
+            'scheme'          => 'tcp://',
         ]);
 
         $app['config']->set('asterisk-pbx-manager.events', [
-            'enabled' => true,
-            'broadcast' => true,
+            'enabled'         => true,
+            'broadcast'       => true,
             'log_to_database' => true,
         ]);
 
         $app['config']->set('asterisk-pbx-manager.broadcasting', [
-            'channel_prefix' => 'asterisk',
+            'channel_prefix'   => 'asterisk',
             'private_channels' => false,
         ]);
     }
@@ -93,9 +95,10 @@ abstract class UnitTestCase extends TestCase
     /**
      * Create a mock PAMI response for testing.
      *
-     * @param bool $success
+     * @param bool        $success
      * @param string|null $message
-     * @param array $keys
+     * @param array       $keys
+     *
      * @return \Mockery\MockInterface
      */
     protected function createMockResponse(bool $success = true, ?string $message = null, array $keys = []): \Mockery\MockInterface
@@ -104,15 +107,16 @@ abstract class UnitTestCase extends TestCase
         $response->shouldReceive('isSuccess')->andReturn($success);
         $response->shouldReceive('getMessage')->andReturn($message);
         $response->shouldReceive('getKeys')->andReturn($keys);
-        
+
         return $response;
     }
 
     /**
      * Create a mock PAMI action for testing.
      *
-     * @param string $actionName
+     * @param string      $actionName
      * @param string|null $actionId
+     *
      * @return \Mockery\MockInterface
      */
     protected function createMockAction(string $actionName = 'TestAction', ?string $actionId = null): \Mockery\MockInterface
@@ -120,7 +124,7 @@ abstract class UnitTestCase extends TestCase
         $action = Mockery::mock(\PAMI\Message\Action\ActionMessage::class);
         $action->shouldReceive('getAction')->andReturn($actionName);
         $action->shouldReceive('getActionId')->andReturn($actionId ?? uniqid());
-        
+
         return $action;
     }
 
@@ -128,7 +132,8 @@ abstract class UnitTestCase extends TestCase
      * Create a mock PAMI event for testing.
      *
      * @param string $eventName
-     * @param array $keys
+     * @param array  $keys
+     *
      * @return \Mockery\MockInterface
      */
     protected function createMockEvent(string $eventName = 'TestEvent', array $keys = []): \Mockery\MockInterface
@@ -136,12 +141,12 @@ abstract class UnitTestCase extends TestCase
         $event = Mockery::mock(\PAMI\Message\Event\EventMessage::class);
         $event->shouldReceive('getEventName')->andReturn($eventName);
         $event->shouldReceive('getKeys')->andReturn($keys);
-        
+
         // Mock getKey method to return specific values
         $event->shouldReceive('getKey')->andReturnUsing(function ($key) use ($keys) {
             return $keys[$key] ?? null;
         });
-        
+
         return $event;
     }
 
@@ -149,6 +154,7 @@ abstract class UnitTestCase extends TestCase
      * Create a mock originate action for testing.
      *
      * @param string $channel
+     *
      * @return \Mockery\MockInterface
      */
     protected function createMockOriginateAction(string $channel = 'SIP/1001'): \Mockery\MockInterface
@@ -160,7 +166,7 @@ abstract class UnitTestCase extends TestCase
         $action->shouldReceive('setContext')->andReturnSelf();
         $action->shouldReceive('setPriority')->andReturnSelf();
         $action->shouldReceive('setTimeout')->andReturnSelf();
-        
+
         return $action;
     }
 
@@ -168,6 +174,7 @@ abstract class UnitTestCase extends TestCase
      * Create a mock hangup action for testing.
      *
      * @param string $channel
+     *
      * @return \Mockery\MockInterface
      */
     protected function createMockHangupAction(string $channel = 'SIP/1001'): \Mockery\MockInterface
@@ -175,7 +182,7 @@ abstract class UnitTestCase extends TestCase
         $action = Mockery::mock(\PAMI\Message\Action\HangupAction::class);
         $action->shouldReceive('getAction')->andReturn('Hangup');
         $action->shouldReceive('getActionId')->andReturn(uniqid());
-        
+
         return $action;
     }
 
@@ -189,7 +196,7 @@ abstract class UnitTestCase extends TestCase
         $action = Mockery::mock(\PAMI\Message\Action\CoreStatusAction::class);
         $action->shouldReceive('getAction')->andReturn('CoreStatus');
         $action->shouldReceive('getActionId')->andReturn(uniqid());
-        
+
         return $action;
     }
 
@@ -199,6 +206,7 @@ abstract class UnitTestCase extends TestCase
      * @param string $channel
      * @param string $destination
      * @param string $subEvent
+     *
      * @return \Mockery\MockInterface
      */
     protected function createMockDialEvent(
@@ -207,12 +215,12 @@ abstract class UnitTestCase extends TestCase
         string $subEvent = 'Begin'
     ): \Mockery\MockInterface {
         return $this->createMockEvent('Dial', [
-            'Channel' => $channel,
-            'Destination' => $destination,
-            'SubEvent' => $subEvent,
-            'CallerIDNum' => '1001',
+            'Channel'      => $channel,
+            'Destination'  => $destination,
+            'SubEvent'     => $subEvent,
+            'CallerIDNum'  => '1001',
             'CallerIDName' => 'Test User',
-            'UniqueId' => uniqid(),
+            'UniqueId'     => uniqid(),
         ]);
     }
 
@@ -221,7 +229,8 @@ abstract class UnitTestCase extends TestCase
      *
      * @param string $channel
      * @param string $cause
-     * @param int $duration
+     * @param int    $duration
+     *
      * @return \Mockery\MockInterface
      */
     protected function createMockHangupEvent(
@@ -230,13 +239,13 @@ abstract class UnitTestCase extends TestCase
         int $duration = 30
     ): \Mockery\MockInterface {
         return $this->createMockEvent('Hangup', [
-            'Channel' => $channel,
-            'Cause' => $cause,
-            'Cause-txt' => 'Normal call clearing',
-            'Duration' => $duration,
-            'CallerIDNum' => '1001',
+            'Channel'      => $channel,
+            'Cause'        => $cause,
+            'Cause-txt'    => 'Normal call clearing',
+            'Duration'     => $duration,
+            'CallerIDNum'  => '1001',
             'CallerIDName' => 'Test User',
-            'UniqueId' => uniqid(),
+            'UniqueId'     => uniqid(),
         ]);
     }
 
@@ -246,6 +255,7 @@ abstract class UnitTestCase extends TestCase
      * @param string $queue
      * @param string $interface
      * @param string $memberName
+     *
      * @return \Mockery\MockInterface
      */
     protected function createMockQueueMemberAddedEvent(
@@ -254,22 +264,22 @@ abstract class UnitTestCase extends TestCase
         string $memberName = 'Test Member'
     ): \Mockery\MockInterface {
         return $this->createMockEvent('QueueMemberAdded', [
-            'Queue' => $queue,
-            'Interface' => $interface,
+            'Queue'      => $queue,
+            'Interface'  => $interface,
             'MemberName' => $memberName,
-            'Status' => '1',
-            'Penalty' => '0',
+            'Status'     => '1',
+            'Penalty'    => '0',
             'CallsTaken' => '5',
-            'LastCall' => time() - 300,
-            'Paused' => '0',
+            'LastCall'   => time() - 300,
+            'Paused'     => '0',
         ]);
     }
 
     /**
      * Assert that an exception was thrown with the expected message.
      *
-     * @param string $expectedClass
-     * @param string $expectedMessage
+     * @param string   $expectedClass
+     * @param string   $expectedMessage
      * @param callable $callback
      */
     protected function assertExceptionThrown(string $expectedClass, string $expectedMessage, callable $callback): void
@@ -297,13 +307,13 @@ abstract class UnitTestCase extends TestCase
     protected function getTestConfig(): array
     {
         return [
-            'host' => '127.0.0.1',
-            'port' => 5038,
-            'username' => 'testuser',
-            'secret' => 'testsecret',
+            'host'            => '127.0.0.1',
+            'port'            => 5038,
+            'username'        => 'testuser',
+            'secret'          => 'testsecret',
             'connect_timeout' => 10,
-            'read_timeout' => 10,
-            'scheme' => 'tcp://',
+            'read_timeout'    => 10,
+            'scheme'          => 'tcp://',
         ];
     }
 }

@@ -5,7 +5,7 @@ namespace AsteriskPbxManager\Services;
 use InvalidArgumentException;
 
 /**
- * AMI Input Sanitizer Service
+ * AMI Input Sanitizer Service.
  *
  * This service provides comprehensive input sanitization for all AMI command parameters
  * to prevent AMI protocol injection attacks and ensure data integrity.
@@ -13,32 +13,30 @@ use InvalidArgumentException;
  * The Asterisk Manager Interface uses key-value pairs separated by colons and messages
  * terminated by double CRLF. This sanitizer removes dangerous characters that could
  * be used to inject malicious AMI commands or corrupt the protocol.
- *
- * @package AsteriskPbxManager\Services
  */
 class AmiInputSanitizer
 {
     /**
-     * Maximum length limits for different parameter types
+     * Maximum length limits for different parameter types.
      */
     private const MAX_LENGTHS = [
-        'channel' => 64,
-        'extension' => 32,
-        'context' => 32,
-        'queue' => 32,
-        'interface' => 64,
-        'variable' => 64,
-        'value' => 256,
-        'filename' => 128,
-        'member_name' => 64,
-        'reason' => 128,
-        'parking_lot' => 32,
+        'channel'       => 64,
+        'extension'     => 32,
+        'context'       => 32,
+        'queue'         => 32,
+        'interface'     => 64,
+        'variable'      => 64,
+        'value'         => 256,
+        'filename'      => 128,
+        'member_name'   => 64,
+        'reason'        => 128,
+        'parking_lot'   => 32,
         'parking_space' => 8,
-        'format' => 16
+        'format'        => 16,
     ];
 
     /**
-     * AMI protocol dangerous characters that must be removed or escaped
+     * AMI protocol dangerous characters that must be removed or escaped.
      */
     private const DANGEROUS_CHARS = [
         "\r",    // Carriage return - used in AMI message termination
@@ -72,7 +70,7 @@ class AmiInputSanitizer
         "\x1D",  // Group separator
         "\x1E",  // Record separator
         "\x1F",  // Unit separator
-        "\x7F"   // Delete
+        "\x7F",   // Delete
     ];
 
     /**
@@ -82,8 +80,10 @@ class AmiInputSanitizer
      * Examples: SIP/1234-00000001, PJSIP/user@domain-00000002
      *
      * @param string $channel
-     * @return string
+     *
      * @throws InvalidArgumentException
+     *
+     * @return string
      */
     public function sanitizeChannel(string $channel): string
     {
@@ -113,8 +113,10 @@ class AmiInputSanitizer
      * Extensions can contain numbers, letters, and common dial characters.
      *
      * @param string $extension
-     * @return string
+     *
      * @throws InvalidArgumentException
+     *
+     * @return string
      */
     public function sanitizeExtension(string $extension): string
     {
@@ -144,8 +146,10 @@ class AmiInputSanitizer
      * Contexts are used in Asterisk dialplan routing.
      *
      * @param string $context
-     * @return string
+     *
      * @throws InvalidArgumentException
+     *
+     * @return string
      */
     public function sanitizeContext(string $context): string
     {
@@ -173,8 +177,10 @@ class AmiInputSanitizer
      * Sanitize queue name parameter.
      *
      * @param string $queue
-     * @return string
+     *
      * @throws InvalidArgumentException
+     *
+     * @return string
      */
     public function sanitizeQueueName(string $queue): string
     {
@@ -205,8 +211,10 @@ class AmiInputSanitizer
      * Examples: SIP/1234, PJSIP/user@domain
      *
      * @param string $interface
-     * @return string
+     *
      * @throws InvalidArgumentException
+     *
+     * @return string
      */
     public function sanitizeInterface(string $interface): string
     {
@@ -234,8 +242,10 @@ class AmiInputSanitizer
      * Sanitize variable name parameter.
      *
      * @param string $variable
-     * @return string
+     *
      * @throws InvalidArgumentException
+     *
+     * @return string
      */
     public function sanitizeVariable(string $variable): string
     {
@@ -265,6 +275,7 @@ class AmiInputSanitizer
      * Variable values can contain a wider range of characters but must be safe for AMI.
      *
      * @param string $value
+     *
      * @return string
      */
     public function sanitizeValue(string $value): string
@@ -285,8 +296,10 @@ class AmiInputSanitizer
      * Sanitize filename parameter.
      *
      * @param string $filename
-     * @return string
+     *
      * @throws InvalidArgumentException
+     *
+     * @return string
      */
     public function sanitizeFilename(string $filename): string
     {
@@ -316,6 +329,7 @@ class AmiInputSanitizer
      * Sanitize member name parameter.
      *
      * @param string $memberName
+     *
      * @return string
      */
     public function sanitizeMemberName(string $memberName): string
@@ -340,6 +354,7 @@ class AmiInputSanitizer
      * Sanitize reason parameter (used for pause reasons, etc.).
      *
      * @param string $reason
+     *
      * @return string
      */
     public function sanitizeReason(string $reason): string
@@ -364,8 +379,10 @@ class AmiInputSanitizer
      * Sanitize parking lot parameter.
      *
      * @param string $parkingLot
-     * @return string
+     *
      * @throws InvalidArgumentException
+     *
+     * @return string
      */
     public function sanitizeParkingLot(string $parkingLot): string
     {
@@ -393,8 +410,10 @@ class AmiInputSanitizer
      * Sanitize parking space parameter.
      *
      * @param string $parkingSpace
-     * @return string
+     *
      * @throws InvalidArgumentException
+     *
+     * @return string
      */
     public function sanitizeParkingSpace(string $parkingSpace): string
     {
@@ -422,8 +441,10 @@ class AmiInputSanitizer
      * Sanitize format parameter (for monitoring, etc.).
      *
      * @param string $format
-     * @return string
+     *
      * @throws InvalidArgumentException
+     *
+     * @return string
      */
     public function sanitizeFormat(string $format): string
     {
@@ -451,6 +472,7 @@ class AmiInputSanitizer
      * Remove dangerous characters that could corrupt AMI protocol.
      *
      * @param string $input
+     *
      * @return string
      */
     private function removeDangerousChars(string $input): string
@@ -470,6 +492,7 @@ class AmiInputSanitizer
      *
      * @param string $input
      * @param string $type
+     *
      * @return string
      */
     private function applyLengthLimit(string $input, string $type): string
@@ -487,6 +510,7 @@ class AmiInputSanitizer
      * Check if a string contains any dangerous characters.
      *
      * @param string $input
+     *
      * @return bool
      */
     public function containsDangerousChars(string $input): bool
@@ -506,16 +530,17 @@ class AmiInputSanitizer
      *
      * @param string $original
      * @param string $sanitized
+     *
      * @return array
      */
     public function getSanitizationInfo(string $original, string $sanitized): array
     {
         return [
-            'original_length' => strlen($original),
-            'sanitized_length' => strlen($sanitized),
-            'characters_removed' => strlen($original) - strlen($sanitized),
+            'original_length'     => strlen($original),
+            'sanitized_length'    => strlen($sanitized),
+            'characters_removed'  => strlen($original) - strlen($sanitized),
             'had_dangerous_chars' => $this->containsDangerousChars($original),
-            'was_truncated' => strlen($sanitized) < strlen($original)
+            'was_truncated'       => strlen($sanitized) < strlen($original),
         ];
     }
 }

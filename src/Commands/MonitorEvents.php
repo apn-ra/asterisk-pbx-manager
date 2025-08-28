@@ -2,12 +2,11 @@
 
 namespace AsteriskPbxManager\Commands;
 
-use Illuminate\Console\Command;
+use AsteriskPbxManager\Models\AsteriskEvent;
 use AsteriskPbxManager\Services\AsteriskManagerService;
 use AsteriskPbxManager\Services\EventProcessor;
-use AsteriskPbxManager\Models\AsteriskEvent;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Console\Command;
 
 class MonitorEvents extends Command
 {
@@ -67,9 +66,10 @@ class MonitorEvents extends Command
         try {
             $this->info('🔊 Starting Asterisk Event Monitor...');
             $this->displayConfiguration();
-            
+
             if (!$this->asteriskManager->isConnected()) {
                 $this->error('❌ Not connected to Asterisk AMI. Please check your configuration.');
+
                 return Command::FAILURE;
             }
 
@@ -81,9 +81,9 @@ class MonitorEvents extends Command
             } else {
                 return $this->showRecentEvents();
             }
-
         } catch (\Exception $e) {
-            $this->error('❌ Error during event monitoring: ' . $e->getMessage());
+            $this->error('❌ Error during event monitoring: '.$e->getMessage());
+
             return Command::FAILURE;
         }
     }
@@ -94,31 +94,31 @@ class MonitorEvents extends Command
     protected function displayConfiguration(): void
     {
         $config = [];
-        
+
         if ($filter = $this->option('filter')) {
             $config[] = ['Filter', $filter];
         }
-        
+
         if ($channel = $this->option('channel')) {
             $config[] = ['Channel', $channel];
         }
-        
+
         if ($queue = $this->option('queue')) {
             $config[] = ['Queue', $queue];
         }
-        
+
         if ($this->option('significant')) {
             $config[] = ['Significant Only', 'Yes'];
         }
-        
+
         if ($this->option('raw')) {
             $config[] = ['Raw Data', 'Yes'];
         }
-        
+
         $config[] = ['Limit', $this->option('limit')];
         $config[] = ['Follow Mode', $this->option('follow') ? 'Yes' : 'No'];
         $config[] = ['Save to DB', $this->option('save') ? 'Yes' : 'No'];
-        
+
         if ($export = $this->option('export')) {
             $config[] = ['Export Format', strtoupper($export)];
         }
@@ -151,12 +151,12 @@ class MonitorEvents extends Command
             if (function_exists('pcntl_signal_dispatch')) {
                 pcntl_signal_dispatch();
             }
-            
+
             usleep(100000); // Sleep for 100ms
         }
 
         $this->displaySessionSummary();
-        
+
         return Command::SUCCESS;
     }
 
@@ -166,7 +166,7 @@ class MonitorEvents extends Command
     protected function showRecentEvents(): int
     {
         $this->info('📊 Retrieving recent events...');
-        
+
         $query = AsteriskEvent::orderBy('event_timestamp', 'desc')
                              ->limit($this->option('limit'));
 
@@ -177,6 +177,7 @@ class MonitorEvents extends Command
 
         if ($events->isEmpty()) {
             $this->warn('No events found matching the criteria.');
+
             return Command::SUCCESS;
         }
 
@@ -202,7 +203,7 @@ class MonitorEvents extends Command
 
             // Process the event
             $processedEvent = $this->processEvent($event);
-            
+
             if (!$this->shouldDisplayEvent($processedEvent)) {
                 return;
             }
@@ -214,9 +215,8 @@ class MonitorEvents extends Command
             if ($this->option('save')) {
                 $this->saveEvent($processedEvent);
             }
-
         } catch (\Exception $e) {
-            $this->error("Error processing event: " . $e->getMessage());
+            $this->error('Error processing event: '.$e->getMessage());
         }
     }
 
@@ -227,17 +227,17 @@ class MonitorEvents extends Command
     {
         return [
             'event_name' => $event->getName() ?? 'Unknown',
-            'timestamp' => Carbon::now(),
-            'channel' => $event->getKey('Channel'),
-            'unique_id' => $event->getKey('Uniqueid'),
-            'caller_id' => $event->getKey('CallerIDNum'),
-            'extension' => $event->getKey('Extension'),
-            'context' => $event->getKey('Context'),
-            'queue' => $event->getKey('Queue'),
-            'bridge_id' => $event->getKey('BridgeId'),
-            'status' => $event->getKey('Status'),
-            'cause' => $event->getKey('Cause'),
-            'raw_data' => $this->option('raw') ? $event->getKeys() : null
+            'timestamp'  => Carbon::now(),
+            'channel'    => $event->getKey('Channel'),
+            'unique_id'  => $event->getKey('Uniqueid'),
+            'caller_id'  => $event->getKey('CallerIDNum'),
+            'extension'  => $event->getKey('Extension'),
+            'context'    => $event->getKey('Context'),
+            'queue'      => $event->getKey('Queue'),
+            'bridge_id'  => $event->getKey('BridgeId'),
+            'status'     => $event->getKey('Status'),
+            'cause'      => $event->getKey('Cause'),
+            'raw_data'   => $this->option('raw') ? $event->getKeys() : null,
         ];
     }
 
@@ -272,9 +272,9 @@ class MonitorEvents extends Command
         if ($this->option('significant')) {
             $significantEvents = [
                 'DialBegin', 'DialEnd', 'Hangup', 'Bridge', 'Unbridge',
-                'QueueCallerJoin', 'QueueCallerLeave', 'AgentConnect', 'AgentComplete'
+                'QueueCallerJoin', 'QueueCallerLeave', 'AgentConnect', 'AgentComplete',
             ];
-            
+
             if (!in_array($event['event_name'], $significantEvents)) {
                 return false;
             }
@@ -291,21 +291,21 @@ class MonitorEvents extends Command
         $timestamp = $event['timestamp']->format('H:i:s');
         $eventName = str_pad($event['event_name'], 20);
         $channel = $event['channel'] ? str_pad(substr($event['channel'], 0, 20), 22) : str_pad('N/A', 22);
-        
+
         $line = "<comment>[{$timestamp}]</comment> <info>{$eventName}</info> {$channel}";
-        
+
         if ($event['caller_id']) {
             $line .= " <comment>from:</comment> {$event['caller_id']}";
         }
-        
+
         if ($event['extension']) {
             $line .= " <comment>to:</comment> {$event['extension']}";
         }
-        
+
         if ($event['queue']) {
             $line .= " <comment>queue:</comment> {$event['queue']}";
         }
-        
+
         if ($event['status']) {
             $line .= " <comment>status:</comment> {$event['status']}";
         }
@@ -314,7 +314,7 @@ class MonitorEvents extends Command
 
         // Show raw data if requested
         if ($this->option('raw') && $event['raw_data']) {
-            $this->line('  <comment>Raw Data:</comment> ' . json_encode($event['raw_data'], JSON_PRETTY_PRINT));
+            $this->line('  <comment>Raw Data:</comment> '.json_encode($event['raw_data'], JSON_PRETTY_PRINT));
         }
     }
 
@@ -324,7 +324,7 @@ class MonitorEvents extends Command
     protected function displayEvents($events): void
     {
         $tableData = [];
-        
+
         foreach ($events as $event) {
             $tableData[] = [
                 $event->event_timestamp->format('H:i:s'),
@@ -333,7 +333,7 @@ class MonitorEvents extends Command
                 $event->caller_id_num ?? 'N/A',
                 $event->extension ?? 'N/A',
                 $event->queue ?? 'N/A',
-                $this->getEventCategory($event->event_name)
+                $this->getEventCategory($event->event_name),
             ];
         }
 
@@ -344,7 +344,7 @@ class MonitorEvents extends Command
             'Caller ID',
             'Extension',
             'Queue',
-            'Category'
+            'Category',
         ], $tableData);
     }
 
@@ -383,8 +383,8 @@ class MonitorEvents extends Command
      */
     protected function exportEvents($events, string $format): int
     {
-        $filename = 'asterisk_events_' . date('Y-m-d_H-i-s') . '.' . $format;
-        $filepath = storage_path('app/' . $filename);
+        $filename = 'asterisk_events_'.date('Y-m-d_H-i-s').'.'.$format;
+        $filepath = storage_path('app/'.$filename);
 
         try {
             switch (strtolower($format)) {
@@ -394,13 +394,13 @@ class MonitorEvents extends Command
 
                 case 'csv':
                     $handle = fopen($filepath, 'w');
-                    
+
                     // CSV headers
                     fputcsv($handle, [
-                        'Timestamp', 'Event Name', 'Channel', 'Caller ID', 
-                        'Extension', 'Queue', 'Status', 'Category'
+                        'Timestamp', 'Event Name', 'Channel', 'Caller ID',
+                        'Extension', 'Queue', 'Status', 'Category',
                     ]);
-                    
+
                     // CSV data
                     foreach ($events as $event) {
                         fputcsv($handle, [
@@ -411,23 +411,25 @@ class MonitorEvents extends Command
                             $event->extension,
                             $event->queue,
                             $event->status,
-                            $this->getEventCategory($event->event_name)
+                            $this->getEventCategory($event->event_name),
                         ]);
                     }
-                    
+
                     fclose($handle);
                     break;
 
                 default:
                     $this->error("Unsupported export format: {$format}");
+
                     return Command::FAILURE;
             }
 
             $this->info("✅ Events exported to: {$filepath}");
-            return Command::SUCCESS;
 
+            return Command::SUCCESS;
         } catch (\Exception $e) {
-            $this->error("❌ Failed to export events: " . $e->getMessage());
+            $this->error('❌ Failed to export events: '.$e->getMessage());
+
             return Command::FAILURE;
         }
     }
@@ -439,23 +441,23 @@ class MonitorEvents extends Command
     {
         try {
             AsteriskEvent::create([
-                'event_name' => $eventData['event_name'],
-                'event_timestamp' => $eventData['timestamp'],
-                'channel' => $eventData['channel'],
-                'unique_id' => $eventData['unique_id'],
-                'caller_id_num' => $eventData['caller_id'],
-                'extension' => $eventData['extension'],
-                'context' => $eventData['context'],
-                'queue' => $eventData['queue'],
-                'bridge_id' => $eventData['bridge_id'],
-                'status' => $eventData['status'],
-                'cause' => $eventData['cause'],
-                'event_data' => $eventData['raw_data'],
-                'received_at' => now(),
-                'processing_status' => 'pending'
+                'event_name'        => $eventData['event_name'],
+                'event_timestamp'   => $eventData['timestamp'],
+                'channel'           => $eventData['channel'],
+                'unique_id'         => $eventData['unique_id'],
+                'caller_id_num'     => $eventData['caller_id'],
+                'extension'         => $eventData['extension'],
+                'context'           => $eventData['context'],
+                'queue'             => $eventData['queue'],
+                'bridge_id'         => $eventData['bridge_id'],
+                'status'            => $eventData['status'],
+                'cause'             => $eventData['cause'],
+                'event_data'        => $eventData['raw_data'],
+                'received_at'       => now(),
+                'processing_status' => 'pending',
             ]);
         } catch (\Exception $e) {
-            $this->error("Failed to save event: " . $e->getMessage());
+            $this->error('Failed to save event: '.$e->getMessage());
         }
     }
 
@@ -464,7 +466,7 @@ class MonitorEvents extends Command
      */
     protected function getEventCategory(string $eventName): string
     {
-        return match($eventName) {
+        return match ($eventName) {
             'DialBegin', 'DialEnd', 'Hangup', 'NewCallerid', 'NewConnectedLine' => 'call',
             'BridgeCreate', 'BridgeDestroy', 'BridgeEnter', 'BridgeLeave' => 'bridge',
             'QueueMemberAdded', 'QueueMemberRemoved', 'QueueMemberPause', 'QueueCallerJoin', 'QueueCallerLeave' => 'queue',
@@ -482,16 +484,16 @@ class MonitorEvents extends Command
      */
     protected function getEventsByCategory(string $category): array
     {
-        return match(strtolower($category)) {
-            'call' => ['DialBegin', 'DialEnd', 'Hangup', 'NewCallerid', 'NewConnectedLine'],
-            'bridge' => ['BridgeCreate', 'BridgeDestroy', 'BridgeEnter', 'BridgeLeave'],
-            'queue' => ['QueueMemberAdded', 'QueueMemberRemoved', 'QueueMemberPause', 'QueueCallerJoin', 'QueueCallerLeave'],
-            'agent' => ['AgentConnect', 'AgentComplete', 'AgentLogin', 'AgentLogoff'],
-            'variable' => ['VarSet', 'UserEvent'],
+        return match (strtolower($category)) {
+            'call'       => ['DialBegin', 'DialEnd', 'Hangup', 'NewCallerid', 'NewConnectedLine'],
+            'bridge'     => ['BridgeCreate', 'BridgeDestroy', 'BridgeEnter', 'BridgeLeave'],
+            'queue'      => ['QueueMemberAdded', 'QueueMemberRemoved', 'QueueMemberPause', 'QueueCallerJoin', 'QueueCallerLeave'],
+            'agent'      => ['AgentConnect', 'AgentComplete', 'AgentLogin', 'AgentLogoff'],
+            'variable'   => ['VarSet', 'UserEvent'],
             'monitoring' => ['MonitorStart', 'MonitorStop'],
-            'dtmf' => ['DTMFBegin', 'DTMFEnd'],
-            'state' => ['NewExten', 'NewState'],
-            default => []
+            'dtmf'       => ['DTMFBegin', 'DTMFEnd'],
+            'state'      => ['NewExten', 'NewState'],
+            default      => []
         };
     }
 
@@ -511,7 +513,7 @@ class MonitorEvents extends Command
     protected function displaySessionSummary(): void
     {
         $duration = $this->startTime->diffForHumans(Carbon::now(), true);
-        
+
         $this->newLine();
         $this->info('📊 Monitoring Session Summary');
         $this->table(['Metric', 'Value'], [
@@ -519,7 +521,7 @@ class MonitorEvents extends Command
             ['Events Processed', number_format($this->eventCount)],
             ['Start Time', $this->startTime->format('Y-m-d H:i:s')],
             ['End Time', Carbon::now()->format('Y-m-d H:i:s')],
-            ['Events per Minute', $this->eventCount > 0 ? number_format($this->eventCount / max(1, $this->startTime->diffInMinutes(Carbon::now())), 1) : '0']
+            ['Events per Minute', $this->eventCount > 0 ? number_format($this->eventCount / max(1, $this->startTime->diffInMinutes(Carbon::now())), 1) : '0'],
         ]);
     }
 }

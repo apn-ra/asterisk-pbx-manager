@@ -4,8 +4,8 @@ namespace AsteriskPbxManager\Tests\Unit\Exceptions;
 
 use AsteriskPbxManager\Exceptions\SecureErrorHandler;
 use Illuminate\Support\Facades\Log;
-use PHPUnit\Framework\TestCase;
 use Mockery;
+use PHPUnit\Framework\TestCase;
 
 class SecureErrorHandlerTest extends TestCase
 {
@@ -38,11 +38,11 @@ class SecureErrorHandlerTest extends TestCase
     public function testSanitizeContextMasksSensitiveData()
     {
         $context = [
-            'username' => 'admin',
-            'password' => 'secret123',
-            'host' => '192.168.1.100',
-            'port' => 5038,
-            'normal_data' => 'safe_value'
+            'username'    => 'admin',
+            'password'    => 'secret123',
+            'host'        => '192.168.1.100',
+            'port'        => 5038,
+            'normal_data' => 'safe_value',
         ];
 
         // Use reflection to access private method
@@ -56,10 +56,10 @@ class SecureErrorHandlerTest extends TestCase
         $this->assertEquals('a***n', $result['username']);
         $this->assertEquals('s*******3', $result['password']);
         $this->assertEquals('1***********0', $result['host']);
-        
+
         // Non-sensitive data should remain unchanged
         $this->assertEquals('safe_value', $result['normal_data']);
-        
+
         // Port is considered sensitive infrastructure information and should be masked
         $this->assertEquals('[MASKED]', $result['port']);
     }
@@ -74,7 +74,7 @@ class SecureErrorHandlerTest extends TestCase
         $this->assertEquals('***', $method->invoke(null, 'abc'));
         $this->assertEquals('**', $method->invoke(null, 'ab'));
         $this->assertEquals('*', $method->invoke(null, 'a'));
-        
+
         // Longer strings should show first and last character
         $this->assertEquals('a****f', $method->invoke(null, 'abcdef'));
         $this->assertEquals('u**r', $method->invoke(null, 'user'));
@@ -96,9 +96,9 @@ class SecureErrorHandlerTest extends TestCase
 
         foreach ($errorCodes as $errorCode) {
             $result = SecureErrorHandler::sanitizeError($errorCode, 'test message', [], null);
-            
+
             // Each error code should have a defined generic message
-            $this->assertNotEquals('An error occurred (Error Code: ' . $errorCode . ')', $result);
+            $this->assertNotEquals('An error occurred (Error Code: '.$errorCode.')', $result);
             $this->assertStringContainsString($errorCode, $result);
         }
     }
@@ -117,7 +117,8 @@ class SecureErrorHandlerTest extends TestCase
     {
         // Mock config function to return development settings
         if (!function_exists('config')) {
-            function config($key, $default = null) {
+            function config($key, $default = null)
+            {
                 switch ($key) {
                     case 'app.debug':
                         return true;
@@ -149,7 +150,7 @@ class SecureErrorHandlerTest extends TestCase
         // Should return generic message
         $this->assertStringContainsString('Authentication failed', $result);
         $this->assertStringContainsString('AMI_AUTH_002', $result);
-        
+
         // Should not contain sensitive details
         $this->assertStringNotContainsString('admin', $result);
         $this->assertStringNotContainsString('secret', $result);
@@ -159,18 +160,18 @@ class SecureErrorHandlerTest extends TestCase
     {
         $context = [
             'connection' => [
-                'host' => '192.168.1.1',
-                'username' => 'root',
+                'host'        => '192.168.1.1',
+                'username'    => 'root',
                 'credentials' => [
-                    'password' => 'topsecret'
-                ]
+                    'password' => 'topsecret',
+                ],
             ],
             'action' => [
-                'name' => 'Originate',
+                'name'   => 'Originate',
                 'params' => [
-                    'channel' => 'SIP/1001'
-                ]
-            ]
+                    'channel' => 'SIP/1001',
+                ],
+            ],
         ];
 
         $reflection = new \ReflectionClass(SecureErrorHandler::class);
@@ -183,7 +184,7 @@ class SecureErrorHandlerTest extends TestCase
         $this->assertEquals('1*********1', $result['connection']['host']);
         $this->assertEquals('r**t', $result['connection']['username']);
         $this->assertEquals('t*******t', $result['connection']['credentials']['password']);
-        
+
         // Non-sensitive nested data should remain
         $this->assertEquals('Originate', $result['action']['name']);
         $this->assertEquals('SIP/1001', $result['action']['params']['channel']);

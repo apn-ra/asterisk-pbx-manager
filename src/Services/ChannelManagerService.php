@@ -2,19 +2,17 @@
 
 namespace AsteriskPbxManager\Services;
 
-use PAMI\Message\Action\RedirectAction;
+use AsteriskPbxManager\Exceptions\ActionExecutionException;
+use Illuminate\Support\Facades\Log;
 use PAMI\Message\Action\BridgeAction;
+use PAMI\Message\Action\GetVarAction;
+use PAMI\Message\Action\MonitorAction;
 use PAMI\Message\Action\ParkAction;
 use PAMI\Message\Action\ParkedCallsAction;
-use PAMI\Message\Action\MonitorAction;
-use PAMI\Message\Action\StopMonitorAction;
-use PAMI\Message\Action\StatusAction;
-use PAMI\Message\Action\GetVarAction;
+use PAMI\Message\Action\RedirectAction;
 use PAMI\Message\Action\SetVarAction;
-use PAMI\Message\Action\AttendedTransferAction;
-use Illuminate\Support\Facades\Log;
-use AsteriskPbxManager\Exceptions\ActionExecutionException;
-use AsteriskPbxManager\Services\AmiInputSanitizer;
+use PAMI\Message\Action\StatusAction;
+use PAMI\Message\Action\StopMonitorAction;
 
 class ChannelManagerService
 {
@@ -43,30 +41,33 @@ class ChannelManagerService
             $action = new RedirectAction($channel, $extension, $context, 1);
 
             $response = $this->asteriskManager->send($action);
-            
+
             if ($response->isSuccess()) {
                 Log::info('Blind transfer executed successfully', [
-                    'channel' => $channel,
+                    'channel'   => $channel,
                     'extension' => $extension,
-                    'context' => $context
+                    'context'   => $context,
                 ]);
+
                 return true;
             } else {
                 Log::warning('Failed to execute blind transfer', [
-                    'channel' => $channel,
+                    'channel'   => $channel,
                     'extension' => $extension,
-                    'context' => $context,
-                    'response' => $response->getMessage()
+                    'context'   => $context,
+                    'response'  => $response->getMessage(),
                 ]);
+
                 return false;
             }
         } catch (\Exception $e) {
-            Log::error('Exception while executing blind transfer: ' . $e->getMessage(), [
-                'channel' => $channel,
+            Log::error('Exception while executing blind transfer: '.$e->getMessage(), [
+                'channel'   => $channel,
                 'extension' => $extension,
-                'context' => $context,
-                'error' => $e->getMessage()
+                'context'   => $context,
+                'error'     => $e->getMessage(),
             ]);
+
             throw new ActionExecutionException("Failed to execute blind transfer: {$e->getMessage()}", 0, $e);
         }
     }
@@ -89,41 +90,45 @@ class ChannelManagerService
                 Log::warning('Failed to bridge channels for attended transfer', [
                     'channel1' => $channel1,
                     'channel2' => $channel2,
-                    'response' => $bridgeResponse->getMessage()
+                    'response' => $bridgeResponse->getMessage(),
                 ]);
+
                 return false;
             }
 
             // Then redirect to the target extension
             $redirectAction = new RedirectAction($channel1, $extension, $context, 1);
             $response = $this->asteriskManager->send($redirectAction);
-            
+
             if ($response->isSuccess()) {
                 Log::info('Attended transfer executed successfully', [
-                    'channel1' => $channel1,
-                    'channel2' => $channel2,
+                    'channel1'  => $channel1,
+                    'channel2'  => $channel2,
                     'extension' => $extension,
-                    'context' => $context
+                    'context'   => $context,
                 ]);
+
                 return true;
             } else {
                 Log::warning('Failed to execute attended transfer redirect', [
-                    'channel1' => $channel1,
-                    'channel2' => $channel2,
+                    'channel1'  => $channel1,
+                    'channel2'  => $channel2,
                     'extension' => $extension,
-                    'context' => $context,
-                    'response' => $response->getMessage()
+                    'context'   => $context,
+                    'response'  => $response->getMessage(),
                 ]);
+
                 return false;
             }
         } catch (\Exception $e) {
-            Log::error('Exception while executing attended transfer: ' . $e->getMessage(), [
-                'channel1' => $channel1,
-                'channel2' => $channel2,
+            Log::error('Exception while executing attended transfer: '.$e->getMessage(), [
+                'channel1'  => $channel1,
+                'channel2'  => $channel2,
                 'extension' => $extension,
-                'context' => $context,
-                'error' => $e->getMessage()
+                'context'   => $context,
+                'error'     => $e->getMessage(),
             ]);
+
             throw new ActionExecutionException("Failed to execute attended transfer: {$e->getMessage()}", 0, $e);
         }
     }
@@ -137,52 +142,53 @@ class ChannelManagerService
 
         try {
             $action = new ParkAction($channel);
-            
+
             if ($parkingLot) {
                 $action->setParkingLot($parkingLot);
             }
-            
+
             if ($timeout) {
                 $action->setTimeout($timeout);
             }
 
             $response = $this->asteriskManager->send($action);
-            
+
             if ($response->isSuccess()) {
                 $parkingSpace = $response->getKey('ParkingSpace') ?? null;
                 $parkingTimeout = $response->getKey('ParkingTimeout') ?? $timeout;
-                
+
                 Log::info('Call parked successfully', [
-                    'channel' => $channel,
+                    'channel'       => $channel,
                     'parking_space' => $parkingSpace,
-                    'parking_lot' => $parkingLot,
-                    'timeout' => $parkingTimeout
+                    'parking_lot'   => $parkingLot,
+                    'timeout'       => $parkingTimeout,
                 ]);
-                
+
                 return [
-                    'success' => true,
+                    'success'       => true,
                     'parking_space' => $parkingSpace,
-                    'parking_lot' => $parkingLot,
-                    'timeout' => $parkingTimeout
+                    'parking_lot'   => $parkingLot,
+                    'timeout'       => $parkingTimeout,
                 ];
             } else {
                 Log::warning('Failed to park call', [
-                    'channel' => $channel,
+                    'channel'     => $channel,
                     'parking_lot' => $parkingLot,
-                    'response' => $response->getMessage()
+                    'response'    => $response->getMessage(),
                 ]);
-                
+
                 return [
                     'success' => false,
-                    'message' => $response->getMessage()
+                    'message' => $response->getMessage(),
                 ];
             }
         } catch (\Exception $e) {
-            Log::error('Exception while parking call: ' . $e->getMessage(), [
-                'channel' => $channel,
+            Log::error('Exception while parking call: '.$e->getMessage(), [
+                'channel'     => $channel,
                 'parking_lot' => $parkingLot,
-                'error' => $e->getMessage()
+                'error'       => $e->getMessage(),
             ]);
+
             throw new ActionExecutionException("Failed to park call: {$e->getMessage()}", 0, $e);
         }
     }
@@ -199,33 +205,36 @@ class ChannelManagerService
             // Use redirect to connect the channel to the parked call
             $extension = $parkingSpace;
             $context = $parkingLot ? "parkedcalls-{$parkingLot}" : 'parkedcalls';
-            
+
             $action = new RedirectAction($channel, $extension, $context, 1);
             $response = $this->asteriskManager->send($action);
-            
+
             if ($response->isSuccess()) {
                 Log::info('Parked call picked up successfully', [
-                    'channel' => $channel,
+                    'channel'       => $channel,
                     'parking_space' => $parkingSpace,
-                    'parking_lot' => $parkingLot
+                    'parking_lot'   => $parkingLot,
                 ]);
+
                 return true;
             } else {
                 Log::warning('Failed to pickup parked call', [
-                    'channel' => $channel,
+                    'channel'       => $channel,
                     'parking_space' => $parkingSpace,
-                    'parking_lot' => $parkingLot,
-                    'response' => $response->getMessage()
+                    'parking_lot'   => $parkingLot,
+                    'response'      => $response->getMessage(),
                 ]);
+
                 return false;
             }
         } catch (\Exception $e) {
-            Log::error('Exception while picking up parked call: ' . $e->getMessage(), [
-                'channel' => $channel,
+            Log::error('Exception while picking up parked call: '.$e->getMessage(), [
+                'channel'       => $channel,
                 'parking_space' => $parkingSpace,
-                'parking_lot' => $parkingLot,
-                'error' => $e->getMessage()
+                'parking_lot'   => $parkingLot,
+                'error'         => $e->getMessage(),
             ]);
+
             throw new ActionExecutionException("Failed to pickup parked call: {$e->getMessage()}", 0, $e);
         }
     }
@@ -238,25 +247,27 @@ class ChannelManagerService
         try {
             $action = new ParkedCallsAction();
             $response = $this->asteriskManager->send($action);
-            
+
             if ($response->isSuccess()) {
                 $parkedCalls = $this->parseParkedCallsResponse($response);
-                
+
                 Log::info('Parked calls retrieved successfully', [
-                    'count' => count($parkedCalls)
+                    'count' => count($parkedCalls),
                 ]);
-                
+
                 return $parkedCalls;
             } else {
                 Log::warning('Failed to get parked calls', [
-                    'response' => $response->getMessage()
+                    'response' => $response->getMessage(),
                 ]);
+
                 return [];
             }
         } catch (\Exception $e) {
-            Log::error('Exception while getting parked calls: ' . $e->getMessage(), [
-                'error' => $e->getMessage()
+            Log::error('Exception while getting parked calls: '.$e->getMessage(), [
+                'error' => $e->getMessage(),
             ]);
+
             throw new ActionExecutionException("Failed to get parked calls: {$e->getMessage()}", 0, $e);
         }
     }
@@ -272,29 +283,32 @@ class ChannelManagerService
             $action = new MonitorAction($channel, $filename, $format, $mix);
 
             $response = $this->asteriskManager->send($action);
-            
+
             if ($response->isSuccess()) {
                 Log::info('Channel monitoring started successfully', [
-                    'channel' => $channel,
+                    'channel'  => $channel,
                     'filename' => $filename,
-                    'format' => $format,
-                    'mix' => $mix
+                    'format'   => $format,
+                    'mix'      => $mix,
                 ]);
+
                 return true;
             } else {
                 Log::warning('Failed to start channel monitoring', [
-                    'channel' => $channel,
+                    'channel'  => $channel,
                     'filename' => $filename,
-                    'response' => $response->getMessage()
+                    'response' => $response->getMessage(),
                 ]);
+
                 return false;
             }
         } catch (\Exception $e) {
-            Log::error('Exception while starting channel monitoring: ' . $e->getMessage(), [
-                'channel' => $channel,
+            Log::error('Exception while starting channel monitoring: '.$e->getMessage(), [
+                'channel'  => $channel,
                 'filename' => $filename,
-                'error' => $e->getMessage()
+                'error'    => $e->getMessage(),
             ]);
+
             throw new ActionExecutionException("Failed to start channel monitoring: {$e->getMessage()}", 0, $e);
         }
     }
@@ -309,24 +323,27 @@ class ChannelManagerService
         try {
             $action = new StopMonitorAction($channel);
             $response = $this->asteriskManager->send($action);
-            
+
             if ($response->isSuccess()) {
                 Log::info('Channel monitoring stopped successfully', [
-                    'channel' => $channel
+                    'channel' => $channel,
                 ]);
+
                 return true;
             } else {
                 Log::warning('Failed to stop channel monitoring', [
-                    'channel' => $channel,
-                    'response' => $response->getMessage()
+                    'channel'  => $channel,
+                    'response' => $response->getMessage(),
                 ]);
+
                 return false;
             }
         } catch (\Exception $e) {
-            Log::error('Exception while stopping channel monitoring: ' . $e->getMessage(), [
+            Log::error('Exception while stopping channel monitoring: '.$e->getMessage(), [
                 'channel' => $channel,
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage(),
             ]);
+
             throw new ActionExecutionException("Failed to stop channel monitoring: {$e->getMessage()}", 0, $e);
         }
     }
@@ -347,28 +364,30 @@ class ChannelManagerService
             }
 
             $response = $this->asteriskManager->send($action);
-            
+
             if ($response->isSuccess()) {
                 $channelData = $this->parseChannelStatusResponse($response);
-                
+
                 Log::info('Channel status retrieved successfully', [
-                    'channel' => $channel ?? 'all',
-                    'channel_count' => count($channelData)
+                    'channel'       => $channel ?? 'all',
+                    'channel_count' => count($channelData),
                 ]);
-                
+
                 return $channelData;
             } else {
                 Log::warning('Failed to get channel status', [
-                    'channel' => $channel ?? 'all',
-                    'response' => $response->getMessage()
+                    'channel'  => $channel ?? 'all',
+                    'response' => $response->getMessage(),
                 ]);
+
                 return [];
             }
         } catch (\Exception $e) {
-            Log::error('Exception while getting channel status: ' . $e->getMessage(), [
+            Log::error('Exception while getting channel status: '.$e->getMessage(), [
                 'channel' => $channel ?? 'all',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage(),
             ]);
+
             throw new ActionExecutionException("Failed to get channel status: {$e->getMessage()}", 0, $e);
         }
     }
@@ -383,31 +402,33 @@ class ChannelManagerService
         try {
             $action = new GetVarAction($channel, $variable);
             $response = $this->asteriskManager->send($action);
-            
+
             if ($response->isSuccess()) {
                 $value = $response->getKey('Value');
-                
+
                 Log::info('Channel variable retrieved successfully', [
-                    'channel' => $channel,
+                    'channel'  => $channel,
                     'variable' => $variable,
-                    'value' => $value
+                    'value'    => $value,
                 ]);
-                
+
                 return $value;
             } else {
                 Log::warning('Failed to get channel variable', [
-                    'channel' => $channel,
+                    'channel'  => $channel,
                     'variable' => $variable,
-                    'response' => $response->getMessage()
+                    'response' => $response->getMessage(),
                 ]);
+
                 return null;
             }
         } catch (\Exception $e) {
-            Log::error('Exception while getting channel variable: ' . $e->getMessage(), [
-                'channel' => $channel,
+            Log::error('Exception while getting channel variable: '.$e->getMessage(), [
+                'channel'  => $channel,
                 'variable' => $variable,
-                'error' => $e->getMessage()
+                'error'    => $e->getMessage(),
             ]);
+
             throw new ActionExecutionException("Failed to get channel variable: {$e->getMessage()}", 0, $e);
         }
     }
@@ -422,30 +443,33 @@ class ChannelManagerService
         try {
             $action = new SetVarAction($channel, $variable, $value);
             $response = $this->asteriskManager->send($action);
-            
+
             if ($response->isSuccess()) {
                 Log::info('Channel variable set successfully', [
-                    'channel' => $channel,
+                    'channel'  => $channel,
                     'variable' => $variable,
-                    'value' => $value
+                    'value'    => $value,
                 ]);
+
                 return true;
             } else {
                 Log::warning('Failed to set channel variable', [
-                    'channel' => $channel,
+                    'channel'  => $channel,
                     'variable' => $variable,
-                    'value' => $value,
-                    'response' => $response->getMessage()
+                    'value'    => $value,
+                    'response' => $response->getMessage(),
                 ]);
+
                 return false;
             }
         } catch (\Exception $e) {
-            Log::error('Exception while setting channel variable: ' . $e->getMessage(), [
-                'channel' => $channel,
+            Log::error('Exception while setting channel variable: '.$e->getMessage(), [
+                'channel'  => $channel,
                 'variable' => $variable,
-                'value' => $value,
-                'error' => $e->getMessage()
+                'value'    => $value,
+                'error'    => $e->getMessage(),
             ]);
+
             throw new ActionExecutionException("Failed to set channel variable: {$e->getMessage()}", 0, $e);
         }
     }
@@ -454,8 +478,10 @@ class ChannelManagerService
      * Validate and sanitize channel parameter.
      *
      * @param string $channel
-     * @return string Sanitized channel
+     *
      * @throws \InvalidArgumentException
+     *
+     * @return string Sanitized channel
      */
     protected function validateChannel(string $channel): string
     {
@@ -466,8 +492,10 @@ class ChannelManagerService
      * Validate and sanitize extension parameter.
      *
      * @param string $extension
-     * @return string Sanitized extension
+     *
      * @throws \InvalidArgumentException
+     *
+     * @return string Sanitized extension
      */
     protected function validateExtension(string $extension): string
     {
@@ -478,8 +506,10 @@ class ChannelManagerService
      * Validate and sanitize parking space parameter.
      *
      * @param string $parkingSpace
-     * @return string Sanitized parking space
+     *
      * @throws \InvalidArgumentException
+     *
+     * @return string Sanitized parking space
      */
     protected function validateParkingSpace(string $parkingSpace): string
     {
@@ -492,24 +522,24 @@ class ChannelManagerService
     protected function parseParkedCallsResponse($response): array
     {
         $parkedCalls = [];
-        
+
         // Placeholder implementation - would need to be adapted based on actual PAMI response format
         $events = $response->getEvents() ?? [];
-        
+
         foreach ($events as $event) {
             if ($event->getName() === 'ParkedCall') {
                 $parkedCalls[] = [
-                    'channel' => $event->getKey('Channel'),
-                    'parking_space' => $event->getKey('ParkingSpace'),
-                    'parking_lot' => $event->getKey('ParkingLot'),
-                    'timeout' => (int) $event->getKey('ParkingTimeout'),
-                    'duration' => (int) $event->getKey('ParkingDuration'),
-                    'caller_id_num' => $event->getKey('CallerIDNum'),
-                    'caller_id_name' => $event->getKey('CallerIDName')
+                    'channel'        => $event->getKey('Channel'),
+                    'parking_space'  => $event->getKey('ParkingSpace'),
+                    'parking_lot'    => $event->getKey('ParkingLot'),
+                    'timeout'        => (int) $event->getKey('ParkingTimeout'),
+                    'duration'       => (int) $event->getKey('ParkingDuration'),
+                    'caller_id_num'  => $event->getKey('CallerIDNum'),
+                    'caller_id_name' => $event->getKey('CallerIDName'),
                 ];
             }
         }
-        
+
         return $parkedCalls;
     }
 
@@ -519,30 +549,30 @@ class ChannelManagerService
     protected function parseChannelStatusResponse($response): array
     {
         $channelData = [];
-        
+
         // Placeholder implementation - would need to be adapted based on actual PAMI response format
         $events = $response->getEvents() ?? [];
-        
+
         foreach ($events as $event) {
             if ($event->getName() === 'Status') {
                 $channel = $event->getKey('Channel');
                 $channelData[$channel] = [
-                    'channel' => $channel,
-                    'caller_id_num' => $event->getKey('CallerIDNum'),
-                    'caller_id_name' => $event->getKey('CallerIDName'),
-                    'account_code' => $event->getKey('AccountCode'),
-                    'channel_state' => $event->getKey('ChannelState'),
+                    'channel'            => $channel,
+                    'caller_id_num'      => $event->getKey('CallerIDNum'),
+                    'caller_id_name'     => $event->getKey('CallerIDName'),
+                    'account_code'       => $event->getKey('AccountCode'),
+                    'channel_state'      => $event->getKey('ChannelState'),
                     'channel_state_desc' => $event->getKey('ChannelStateDesc'),
-                    'context' => $event->getKey('Context'),
-                    'extension' => $event->getKey('Extension'),
-                    'priority' => (int) $event->getKey('Priority'),
-                    'seconds' => (int) $event->getKey('Seconds'),
-                    'bridge_id' => $event->getKey('BridgeId'),
-                    'unique_id' => $event->getKey('Uniqueid')
+                    'context'            => $event->getKey('Context'),
+                    'extension'          => $event->getKey('Extension'),
+                    'priority'           => (int) $event->getKey('Priority'),
+                    'seconds'            => (int) $event->getKey('Seconds'),
+                    'bridge_id'          => $event->getKey('BridgeId'),
+                    'unique_id'          => $event->getKey('Uniqueid'),
                 ];
             }
         }
-        
+
         return $channelData;
     }
 }

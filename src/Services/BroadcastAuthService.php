@@ -2,19 +2,19 @@
 
 namespace AsteriskPbxManager\Services;
 
-use Illuminate\Contracts\Auth\Guard;
-use Illuminate\Contracts\Auth\Factory as AuthFactory;
-use Illuminate\Support\Facades\Log;
 use AsteriskPbxManager\Exceptions\ActionExecutionException;
+use Illuminate\Contracts\Auth\Factory as AuthFactory;
+use Illuminate\Contracts\Auth\Guard;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service for handling authentication of broadcast events.
- * 
+ *
  * This service provides authentication mechanisms for Asterisk event broadcasting,
  * supporting both user-based authentication and token-based authentication.
- * 
- * @package AsteriskPbxManager\Services
+ *
  * @author Asterisk PBX Manager Package
+ *
  * @since 1.0.0
  */
 class BroadcastAuthService
@@ -58,8 +58,10 @@ class BroadcastAuthService
      * Authenticate a user for broadcast access.
      *
      * @param mixed $user Optional user instance to authenticate
-     * @return bool
+     *
      * @throws ActionExecutionException
+     *
+     * @return bool
      */
     public function authenticateUser($user = null): bool
     {
@@ -69,15 +71,16 @@ class BroadcastAuthService
 
         try {
             $guard = $this->getGuard();
-            
+
             // Use provided user or get from guard
             $authenticatedUser = $user ?? $guard->user();
-            
+
             if (!$authenticatedUser) {
                 Log::warning('Broadcast authentication failed: No authenticated user', [
-                    'guard' => $this->config['guard'] ?? 'web',
-                    'context' => 'asterisk_broadcast_auth'
+                    'guard'   => $this->config['guard'] ?? 'web',
+                    'context' => 'asterisk_broadcast_auth',
                 ]);
+
                 return false;
             }
 
@@ -88,19 +91,18 @@ class BroadcastAuthService
 
             Log::info('Broadcast authentication successful', [
                 'user_id' => $authenticatedUser->id ?? null,
-                'context' => 'asterisk_broadcast_auth'
+                'context' => 'asterisk_broadcast_auth',
             ]);
 
             return true;
-
         } catch (\Exception $e) {
             Log::error('Broadcast authentication error', [
-                'error' => $e->getMessage(),
-                'context' => 'asterisk_broadcast_auth'
+                'error'   => $e->getMessage(),
+                'context' => 'asterisk_broadcast_auth',
             ]);
-            
+
             throw new ActionExecutionException(
-                'Broadcast authentication failed: ' . $e->getMessage(),
+                'Broadcast authentication failed: '.$e->getMessage(),
                 $e->getCode(),
                 $e
             );
@@ -111,6 +113,7 @@ class BroadcastAuthService
      * Authenticate using token-based authentication.
      *
      * @param string $token
+     *
      * @return bool
      */
     public function authenticateToken(string $token): bool
@@ -120,11 +123,12 @@ class BroadcastAuthService
         }
 
         $allowedTokens = $this->config['allowed_tokens'] ?? [];
-        
+
         if (empty($allowedTokens)) {
             Log::warning('Token authentication attempted but no tokens configured', [
-                'context' => 'asterisk_broadcast_auth'
+                'context' => 'asterisk_broadcast_auth',
             ]);
+
             return false;
         }
 
@@ -133,12 +137,12 @@ class BroadcastAuthService
         if ($isValid) {
             Log::info('Token broadcast authentication successful', [
                 'token_hash' => hash('sha256', $token),
-                'context' => 'asterisk_broadcast_auth'
+                'context'    => 'asterisk_broadcast_auth',
             ]);
         } else {
             Log::warning('Token broadcast authentication failed', [
                 'token_hash' => hash('sha256', $token),
-                'context' => 'asterisk_broadcast_auth'
+                'context'    => 'asterisk_broadcast_auth',
             ]);
         }
 
@@ -148,8 +152,9 @@ class BroadcastAuthService
     /**
      * Check if the user should be allowed to receive broadcast events.
      *
-     * @param mixed $user Optional user instance
+     * @param mixed       $user  Optional user instance
      * @param string|null $token Optional token for token-based auth
+     *
      * @return bool
      */
     public function canReceiveBroadcast($user = null, ?string $token = null): bool
@@ -175,6 +180,7 @@ class BroadcastAuthService
     protected function getGuard(): Guard
     {
         $guardName = $this->config['guard'] ?? 'web';
+
         return $this->auth->guard($guardName);
     }
 
@@ -186,6 +192,7 @@ class BroadcastAuthService
     protected function hasPermissionRequirement(): bool
     {
         $permissions = $this->config['required_permissions'] ?? '';
+
         return !empty($permissions);
     }
 
@@ -193,12 +200,13 @@ class BroadcastAuthService
      * Check user permissions for broadcast access.
      *
      * @param mixed $user
+     *
      * @return bool
      */
     protected function checkPermissions($user): bool
     {
         $requiredPermissions = $this->config['required_permissions'] ?? '';
-        
+
         if (empty($requiredPermissions)) {
             return true;
         }
@@ -206,14 +214,14 @@ class BroadcastAuthService
         // Check if user has a 'can' method (Laravel's authorization)
         if (method_exists($user, 'can')) {
             $hasPermission = $user->can($requiredPermissions);
-            
+
             Log::info('Permission check for broadcast access', [
-                'user_id' => $user->id ?? null,
+                'user_id'    => $user->id ?? null,
                 'permission' => $requiredPermissions,
-                'granted' => $hasPermission,
-                'context' => 'asterisk_broadcast_auth'
+                'granted'    => $hasPermission,
+                'context'    => 'asterisk_broadcast_auth',
             ]);
-            
+
             return $hasPermission;
         }
 
@@ -228,9 +236,9 @@ class BroadcastAuthService
         }
 
         Log::warning('Cannot verify permissions - no permission method available', [
-            'user_id' => $user->id ?? null,
+            'user_id'    => $user->id ?? null,
             'user_class' => get_class($user),
-            'context' => 'asterisk_broadcast_auth'
+            'context'    => 'asterisk_broadcast_auth',
         ]);
 
         // Default to deny if we can't check permissions
@@ -267,7 +275,7 @@ class BroadcastAuthService
         // Return config without sensitive data
         $safeConfig = $this->config;
         unset($safeConfig['allowed_tokens']);
-        
+
         return $safeConfig;
     }
 }

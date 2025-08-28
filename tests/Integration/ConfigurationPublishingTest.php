@@ -2,10 +2,9 @@
 
 namespace AsteriskPbxManager\Tests\Integration;
 
-use AsteriskPbxManager\Tests\Integration\IntegrationTestCase;
 use AsteriskPbxManager\AsteriskPbxManagerServiceProvider;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 
 class ConfigurationPublishingTest extends IntegrationTestCase
 {
@@ -14,7 +13,7 @@ class ConfigurationPublishingTest extends IntegrationTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->configPath = $this->app->configPath('asterisk-pbx-manager.php');
     }
 
@@ -24,7 +23,7 @@ class ConfigurationPublishingTest extends IntegrationTestCase
         if (File::exists($this->configPath)) {
             File::delete($this->configPath);
         }
-        
+
         parent::tearDown();
     }
 
@@ -32,14 +31,14 @@ class ConfigurationPublishingTest extends IntegrationTestCase
     {
         // Ensure config file doesn't exist initially
         $this->assertFalse(File::exists($this->configPath));
-        
+
         // Publish the configuration
         $exitCode = Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config',
-            '--force' => true
+            '--tag'      => 'config',
+            '--force'    => true,
         ]);
-        
+
         $this->assertEquals(0, $exitCode);
         $this->assertTrue(File::exists($this->configPath));
     }
@@ -49,13 +48,13 @@ class ConfigurationPublishingTest extends IntegrationTestCase
         // Publish the configuration
         Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config',
-            '--force' => true
+            '--tag'      => 'config',
+            '--force'    => true,
         ]);
-        
+
         // Verify the published file is valid PHP
         $this->assertTrue(File::exists($this->configPath));
-        
+
         // Load the configuration and verify it's a valid array
         $publishedConfig = include $this->configPath;
         $this->assertIsArray($publishedConfig);
@@ -66,15 +65,15 @@ class ConfigurationPublishingTest extends IntegrationTestCase
         // Publish the configuration
         Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config',
-            '--force' => true
+            '--tag'      => 'config',
+            '--force'    => true,
         ]);
-        
+
         $publishedConfig = include $this->configPath;
-        
+
         // Verify all required top-level keys are present
         $requiredKeys = ['connection', 'events', 'logging', 'queue', 'channel', 'security'];
-        
+
         foreach ($requiredKeys as $key) {
             $this->assertArrayHasKey($key, $publishedConfig, "Published config is missing required key: {$key}");
         }
@@ -85,22 +84,22 @@ class ConfigurationPublishingTest extends IntegrationTestCase
         // Publish the configuration
         Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config',
-            '--force' => true
+            '--tag'      => 'config',
+            '--force'    => true,
         ]);
-        
+
         $publishedConfig = include $this->configPath;
         $connectionConfig = $publishedConfig['connection'];
-        
+
         $requiredConnectionKeys = [
-            'host', 'port', 'username', 'secret', 
-            'connect_timeout', 'read_timeout', 'scheme'
+            'host', 'port', 'username', 'secret',
+            'connect_timeout', 'read_timeout', 'scheme',
         ];
-        
+
         foreach ($requiredConnectionKeys as $key) {
             $this->assertArrayHasKey($key, $connectionConfig, "Connection config is missing key: {$key}");
         }
-        
+
         // Verify default values
         $this->assertEquals('127.0.0.1', $connectionConfig['host']);
         $this->assertEquals(5038, $connectionConfig['port']);
@@ -112,19 +111,19 @@ class ConfigurationPublishingTest extends IntegrationTestCase
         // Publish the configuration
         Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config',
-            '--force' => true
+            '--tag'      => 'config',
+            '--force'    => true,
         ]);
-        
+
         $publishedConfig = include $this->configPath;
         $eventsConfig = $publishedConfig['events'];
-        
+
         $requiredEventsKeys = ['enabled', 'broadcast', 'listeners'];
-        
+
         foreach ($requiredEventsKeys as $key) {
             $this->assertArrayHasKey($key, $eventsConfig, "Events config is missing key: {$key}");
         }
-        
+
         // Verify default values
         $this->assertIsBool($eventsConfig['enabled']);
         $this->assertIsBool($eventsConfig['broadcast']);
@@ -136,19 +135,19 @@ class ConfigurationPublishingTest extends IntegrationTestCase
         // Publish the configuration
         Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config',
-            '--force' => true
+            '--tag'      => 'config',
+            '--force'    => true,
         ]);
-        
+
         $publishedConfig = include $this->configPath;
         $loggingConfig = $publishedConfig['logging'];
-        
+
         $requiredLoggingKeys = ['enabled', 'channel', 'level'];
-        
+
         foreach ($requiredLoggingKeys as $key) {
             $this->assertArrayHasKey($key, $loggingConfig, "Logging config is missing key: {$key}");
         }
-        
+
         // Verify default values
         $this->assertIsBool($loggingConfig['enabled']);
         $this->assertIsString($loggingConfig['channel']);
@@ -158,35 +157,35 @@ class ConfigurationPublishingTest extends IntegrationTestCase
     public function testConfigurationMergingWithDefaults()
     {
         // Test that published config merges correctly with package defaults
-        
+
         // First, get the original package config
         $originalConfig = $this->app['config']['asterisk-pbx-manager'];
-        
+
         // Publish the configuration
         Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config',
-            '--force' => true
+            '--tag'      => 'config',
+            '--force'    => true,
         ]);
-        
+
         // Modify the published config
         $publishedConfig = include $this->configPath;
         $publishedConfig['connection']['host'] = 'custom.asterisk.server';
         $publishedConfig['connection']['port'] = 9999;
         $publishedConfig['events']['enabled'] = false;
-        
-        File::put($this->configPath, '<?php return ' . var_export($publishedConfig, true) . ';');
-        
+
+        File::put($this->configPath, '<?php return '.var_export($publishedConfig, true).';');
+
         // Reload the application to pick up the published config
         $this->refreshApplication();
-        
+
         // Verify that the custom values are used
         $mergedConfig = $this->app['config']['asterisk-pbx-manager'];
-        
+
         $this->assertEquals('custom.asterisk.server', $mergedConfig['connection']['host']);
         $this->assertEquals(9999, $mergedConfig['connection']['port']);
         $this->assertFalse($mergedConfig['events']['enabled']);
-        
+
         // Verify that non-overridden values still use defaults
         $this->assertEquals($originalConfig['connection']['scheme'], $mergedConfig['connection']['scheme']);
         $this->assertEquals($originalConfig['logging']['channel'], $mergedConfig['logging']['channel']);
@@ -195,7 +194,7 @@ class ConfigurationPublishingTest extends IntegrationTestCase
     public function testPartialConfigurationPublishing()
     {
         // Test publishing only specific sections of config
-        
+
         // Create a minimal config file that only overrides some values
         $partialConfig = [
             'connection' => [
@@ -209,19 +208,19 @@ class ConfigurationPublishingTest extends IntegrationTestCase
             ],
             // Intentionally missing logging and queue sections
         ];
-        
-        File::put($this->configPath, '<?php return ' . var_export($partialConfig, true) . ';');
-        
+
+        File::put($this->configPath, '<?php return '.var_export($partialConfig, true).';');
+
         // Reload the application
         $this->refreshApplication();
-        
+
         $mergedConfig = $this->app['config']['asterisk-pbx-manager'];
-        
+
         // Verify custom values are applied
         $this->assertEquals('partial.asterisk.server', $mergedConfig['connection']['host']);
         $this->assertEquals(7777, $mergedConfig['connection']['port']);
         $this->assertFalse($mergedConfig['events']['enabled']);
-        
+
         // Verify missing values fall back to package defaults
         $this->assertArrayHasKey('username', $mergedConfig['connection']);
         $this->assertArrayHasKey('secret', $mergedConfig['connection']);
@@ -235,12 +234,12 @@ class ConfigurationPublishingTest extends IntegrationTestCase
         // Publish the configuration
         Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config',
-            '--force' => true
+            '--tag'      => 'config',
+            '--force'    => true,
         ]);
-        
+
         $publishedConfig = include $this->configPath;
-        
+
         // Test connection validation
         $this->assertIsString($publishedConfig['connection']['host']);
         $this->assertIsInt($publishedConfig['connection']['port']);
@@ -249,17 +248,17 @@ class ConfigurationPublishingTest extends IntegrationTestCase
         $this->assertIsInt($publishedConfig['connection']['connect_timeout']);
         $this->assertIsInt($publishedConfig['connection']['read_timeout']);
         $this->assertIsString($publishedConfig['connection']['scheme']);
-        
+
         // Test events validation
         $this->assertIsBool($publishedConfig['events']['enabled']);
         $this->assertIsBool($publishedConfig['events']['broadcast']);
         $this->assertIsArray($publishedConfig['events']['listeners']);
-        
+
         // Test logging validation
         $this->assertIsBool($publishedConfig['logging']['enabled']);
         $this->assertIsString($publishedConfig['logging']['channel']);
         $this->assertIsString($publishedConfig['logging']['level']);
-        
+
         // Test queue validation
         $this->assertIsInt($publishedConfig['queue']['default_penalty']);
         $this->assertIsBool($publishedConfig['queue']['default_paused']);
@@ -271,12 +270,12 @@ class ConfigurationPublishingTest extends IntegrationTestCase
         // Publish the configuration
         Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config',
-            '--force' => true
+            '--tag'      => 'config',
+            '--force'    => true,
         ]);
-        
+
         $publishedConfigContent = File::get($this->configPath);
-        
+
         // Verify that the published config uses env() helpers for configurable values
         $this->assertStringContains("env('ASTERISK_AMI_HOST'", $publishedConfigContent);
         $this->assertStringContains("env('ASTERISK_AMI_PORT'", $publishedConfigContent);
@@ -289,35 +288,35 @@ class ConfigurationPublishingTest extends IntegrationTestCase
         // First publish
         Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config'
+            '--tag'      => 'config',
         ]);
-        
+
         $this->assertTrue(File::exists($this->configPath));
-        
+
         // Modify the published file
         File::put($this->configPath, '<?php return ["test" => "modified"];');
         $modifiedContent = File::get($this->configPath);
         $this->assertStringContains('modified', $modifiedContent);
-        
+
         // Publish again without force (should not overwrite)
         Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config'
+            '--tag'      => 'config',
         ]);
-        
+
         $contentAfterRegularPublish = File::get($this->configPath);
         $this->assertStringContains('modified', $contentAfterRegularPublish);
-        
+
         // Publish with force flag (should overwrite)
         Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config',
-            '--force' => true
+            '--tag'      => 'config',
+            '--force'    => true,
         ]);
-        
+
         $contentAfterForcePublish = File::get($this->configPath);
         $this->assertStringNotContainsString('modified', $contentAfterForcePublish);
-        
+
         // Verify it's back to the original config structure
         $restoredConfig = include $this->configPath;
         $this->assertIsArray($restoredConfig);
@@ -329,16 +328,16 @@ class ConfigurationPublishingTest extends IntegrationTestCase
         // Test that only config files are published when using config tag
         $exitCode = Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config'
+            '--tag'      => 'config',
         ]);
-        
+
         $this->assertEquals(0, $exitCode);
         $this->assertTrue(File::exists($this->configPath));
-        
+
         // Verify no other files were published (like migrations)
         $migrationPath = $this->app->databasePath('migrations');
-        $migrationFiles = File::glob($migrationPath . '/*asterisk*.php');
-        
+        $migrationFiles = File::glob($migrationPath.'/*asterisk*.php');
+
         // Migrations shouldn't be published with config tag
         $this->assertEmpty($migrationFiles, 'Migration files should not be published with config tag');
     }
@@ -348,12 +347,12 @@ class ConfigurationPublishingTest extends IntegrationTestCase
         // Publish the configuration
         Artisan::call('vendor:publish', [
             '--provider' => AsteriskPbxManagerServiceProvider::class,
-            '--tag' => 'config',
-            '--force' => true
+            '--tag'      => 'config',
+            '--force'    => true,
         ]);
-        
+
         $publishedConfig = include $this->configPath;
-        
+
         // Verify the structure matches expected format
         $this->assertIsArray($publishedConfig['connection']);
         $this->assertIsArray($publishedConfig['events']);
@@ -362,7 +361,7 @@ class ConfigurationPublishingTest extends IntegrationTestCase
         $this->assertIsArray($publishedConfig['queue']);
         $this->assertIsArray($publishedConfig['channel']);
         $this->assertIsArray($publishedConfig['security']);
-        
+
         // Verify nested arrays have expected structure
         $this->assertIsArray($publishedConfig['queue']['strategies']);
         $this->assertIsArray($publishedConfig['channel']['dtmf']);

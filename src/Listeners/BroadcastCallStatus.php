@@ -2,13 +2,13 @@
 
 namespace AsteriskPbxManager\Listeners;
 
+use AsteriskPbxManager\Events\AsteriskEvent;
 use AsteriskPbxManager\Events\CallConnected;
 use AsteriskPbxManager\Events\CallEnded;
 use AsteriskPbxManager\Events\QueueMemberAdded;
-use AsteriskPbxManager\Events\AsteriskEvent;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Log;
 
 class BroadcastCallStatus implements ShouldQueue
 {
@@ -32,33 +32,33 @@ class BroadcastCallStatus implements ShouldQueue
 
         try {
             $broadcastData = [
-                'event_type' => 'call_connected',
-                'timestamp' => now()->toISOString(),
-                'channel' => $event->channel,
-                'caller_id' => $event->callerIdNum,
+                'event_type'   => 'call_connected',
+                'timestamp'    => now()->toISOString(),
+                'channel'      => $event->channel,
+                'caller_id'    => $event->callerIdNum,
                 'connected_to' => $event->connectedLineNum,
-                'extension' => $event->extension,
-                'context' => $event->context ?? 'default',
-                'status' => 'connected'
+                'extension'    => $event->extension,
+                'context'      => $event->context ?? 'default',
+                'status'       => 'connected',
             ];
 
             // Broadcast to specific channel based on extension or general channel
             $channelName = $event->extension ? "asterisk.extension.{$event->extension}" : 'asterisk.calls';
-            
+
             Broadcast::channel($channelName)->send('call.status.update', $broadcastData);
 
             // Also broadcast to general asterisk events channel
             Broadcast::channel('asterisk.events')->send('call.connected', $broadcastData);
 
             Log::info('Call connected status broadcasted', [
-                'channel' => $event->channel,
-                'extension' => $event->extension,
-                'broadcast_channel' => $channelName
+                'channel'           => $event->channel,
+                'extension'         => $event->extension,
+                'broadcast_channel' => $channelName,
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to broadcast call connected status: ' . $e->getMessage(), [
+            Log::error('Failed to broadcast call connected status: '.$e->getMessage(), [
                 'channel' => $event->channel,
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage(),
             ]);
         }
     }
@@ -75,34 +75,34 @@ class BroadcastCallStatus implements ShouldQueue
 
         try {
             $broadcastData = [
-                'event_type' => 'call_ended',
-                'timestamp' => now()->toISOString(),
-                'channel' => $event->channel,
-                'caller_id' => $event->callerIdNum ?? 'Unknown',
-                'duration' => $event->duration ?? 0,
+                'event_type'   => 'call_ended',
+                'timestamp'    => now()->toISOString(),
+                'channel'      => $event->channel,
+                'caller_id'    => $event->callerIdNum ?? 'Unknown',
+                'duration'     => $event->duration ?? 0,
                 'hangup_cause' => $event->cause ?? 'unknown',
-                'context' => $event->context ?? 'default',
-                'status' => 'ended'
+                'context'      => $event->context ?? 'default',
+                'status'       => 'ended',
             ];
 
             // Broadcast to specific channel based on extension or general channel
             $channelName = $event->extension ? "asterisk.extension.{$event->extension}" : 'asterisk.calls';
-            
+
             Broadcast::channel($channelName)->send('call.status.update', $broadcastData);
 
             // Also broadcast to general asterisk events channel
             Broadcast::channel('asterisk.events')->send('call.ended', $broadcastData);
 
             Log::info('Call ended status broadcasted', [
-                'channel' => $event->channel,
-                'cause' => $event->cause ?? 'unknown',
-                'duration' => $event->duration ?? 0,
-                'broadcast_channel' => $channelName
+                'channel'           => $event->channel,
+                'cause'             => $event->cause ?? 'unknown',
+                'duration'          => $event->duration ?? 0,
+                'broadcast_channel' => $channelName,
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to broadcast call ended status: ' . $e->getMessage(), [
+            Log::error('Failed to broadcast call ended status: '.$e->getMessage(), [
                 'channel' => $event->channel,
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage(),
             ]);
         }
     }
@@ -119,33 +119,33 @@ class BroadcastCallStatus implements ShouldQueue
 
         try {
             $broadcastData = [
-                'event_type' => 'queue_member_added',
-                'timestamp' => now()->toISOString(),
-                'queue' => $event->queue,
-                'location' => $event->location,
+                'event_type'  => 'queue_member_added',
+                'timestamp'   => now()->toISOString(),
+                'queue'       => $event->queue,
+                'location'    => $event->location,
                 'member_name' => $event->memberName ?? 'Unknown',
-                'interface' => $event->interface ?? $event->location,
-                'status' => 'added'
+                'interface'   => $event->interface ?? $event->location,
+                'status'      => 'added',
             ];
 
             // Broadcast to queue-specific channel
             $channelName = "asterisk.queue.{$event->queue}";
-            
+
             Broadcast::channel($channelName)->send('queue.member.update', $broadcastData);
 
             // Also broadcast to general asterisk events channel
             Broadcast::channel('asterisk.events')->send('queue.member.added', $broadcastData);
 
             Log::info('Queue member added status broadcasted', [
-                'queue' => $event->queue,
-                'location' => $event->location,
-                'broadcast_channel' => $channelName
+                'queue'             => $event->queue,
+                'location'          => $event->location,
+                'broadcast_channel' => $channelName,
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to broadcast queue member added status: ' . $e->getMessage(), [
-                'queue' => $event->queue,
+            Log::error('Failed to broadcast queue member added status: '.$e->getMessage(), [
+                'queue'    => $event->queue,
                 'location' => $event->location,
-                'error' => $e->getMessage()
+                'error'    => $e->getMessage(),
             ]);
         }
     }
@@ -170,7 +170,7 @@ class BroadcastCallStatus implements ShouldQueue
             'QueueCallerJoin',
             'QueueCallerLeave',
             'AgentConnect',
-            'AgentComplete'
+            'AgentComplete',
         ];
 
         if (!in_array($event->eventName, $significantEvents)) {
@@ -180,11 +180,11 @@ class BroadcastCallStatus implements ShouldQueue
         try {
             $broadcastData = [
                 'event_type' => 'asterisk_event',
-                'timestamp' => now()->toISOString(),
+                'timestamp'  => now()->toISOString(),
                 'event_name' => $event->eventName,
-                'channel' => $event->channel ?? null,
-                'unique_id' => $event->uniqueId ?? null,
-                'data' => $event->rawData ?? []
+                'channel'    => $event->channel ?? null,
+                'unique_id'  => $event->uniqueId ?? null,
+                'data'       => $event->rawData ?? [],
             ];
 
             // Broadcast to general asterisk events channel
@@ -198,12 +198,12 @@ class BroadcastCallStatus implements ShouldQueue
 
             Log::debug('Asterisk event broadcasted', [
                 'event_name' => $event->eventName,
-                'channel' => $event->channel ?? 'N/A'
+                'channel'    => $event->channel ?? 'N/A',
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to broadcast Asterisk event: ' . $e->getMessage(), [
+            Log::error('Failed to broadcast Asterisk event: '.$e->getMessage(), [
                 'event_name' => $event->eventName,
-                'error' => $e->getMessage()
+                'error'      => $e->getMessage(),
             ]);
         }
     }
@@ -221,18 +221,18 @@ class BroadcastCallStatus implements ShouldQueue
         try {
             $broadcastData = [
                 'event_type' => 'system_status',
-                'timestamp' => now()->toISOString(),
-                'status' => $statusData
+                'timestamp'  => now()->toISOString(),
+                'status'     => $statusData,
             ];
 
             Broadcast::channel('asterisk.system')->send('system.status', $broadcastData);
 
             Log::info('System status broadcasted', [
-                'connection_status' => $statusData['connected'] ?? 'unknown'
+                'connection_status' => $statusData['connected'] ?? 'unknown',
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to broadcast system status: ' . $e->getMessage(), [
-                'error' => $e->getMessage()
+            Log::error('Failed to broadcast system status: '.$e->getMessage(), [
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -243,10 +243,10 @@ class BroadcastCallStatus implements ShouldQueue
     public function subscribe($events): array
     {
         return [
-            CallConnected::class => 'handleCallConnected',
-            CallEnded::class => 'handleCallEnded',
+            CallConnected::class    => 'handleCallConnected',
+            CallEnded::class        => 'handleCallEnded',
             QueueMemberAdded::class => 'handleQueueMemberAdded',
-            AsteriskEvent::class => 'handleAsteriskEvent',
+            AsteriskEvent::class    => 'handleAsteriskEvent',
         ];
     }
 }

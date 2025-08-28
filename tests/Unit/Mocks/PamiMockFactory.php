@@ -2,12 +2,12 @@
 
 namespace AsteriskPbxManager\Tests\Unit\Mocks;
 
-use PAMI\Client\Impl\ClientImpl;
-use PAMI\Message\Action\ActionMessage;
-use PAMI\Message\Response\ResponseMessage;
-use PAMI\Message\Event\EventMessage;
 use Mockery;
 use Mockery\MockInterface;
+use PAMI\Client\Impl\ClientImpl;
+use PAMI\Message\Action\ActionMessage;
+use PAMI\Message\Event\EventMessage;
+use PAMI\Message\Response\ResponseMessage;
 
 /**
  * Factory for creating PAMI mocks for testing.
@@ -18,6 +18,7 @@ class PamiMockFactory
      * Create a mock PAMI client.
      *
      * @param array $methods Methods to mock with their return values
+     *
      * @return MockInterface
      */
     public static function createClient(array $methods = []): MockInterface
@@ -26,10 +27,10 @@ class PamiMockFactory
 
         // Default behaviors
         $defaultMethods = [
-            'open' => true,
-            'close' => true,
-            'isConnected' => true,
-            'send' => self::createSuccessResponse(),
+            'open'                  => true,
+            'close'                 => true,
+            'isConnected'           => true,
+            'send'                  => self::createSuccessResponse(),
             'registerEventListener' => true,
         ];
 
@@ -57,9 +58,9 @@ class PamiMockFactory
     public static function createConnectedClient(): MockInterface
     {
         return self::createClient([
-            'open' => true,
+            'open'        => true,
             'isConnected' => true,
-            'close' => true,
+            'close'       => true,
         ]);
     }
 
@@ -71,9 +72,9 @@ class PamiMockFactory
     public static function createDisconnectedClient(): MockInterface
     {
         return self::createClient([
-            'open' => ['exception' => new \Exception('Connection failed')],
+            'open'        => ['exception' => new \Exception('Connection failed')],
             'isConnected' => false,
-            'send' => ['exception' => new \Exception('Not connected')],
+            'send'        => ['exception' => new \Exception('Not connected')],
         ]);
     }
 
@@ -81,18 +82,20 @@ class PamiMockFactory
      * Create a PAMI client that fails after some operations.
      *
      * @param int $failAfter Number of successful operations before failure
+     *
      * @return MockInterface
      */
     public static function createUnstableClient(int $failAfter = 3): MockInterface
     {
         $operationCount = 0;
-        
+
         return self::createClient([
             'send' => function () use (&$operationCount, $failAfter) {
                 $operationCount++;
                 if ($operationCount > $failAfter) {
                     throw new \Exception('Connection lost');
                 }
+
                 return self::createSuccessResponse();
             },
         ]);
@@ -102,16 +105,17 @@ class PamiMockFactory
      * Create a success response mock.
      *
      * @param array $keys Additional response keys
+     *
      * @return MockInterface
      */
     public static function createSuccessResponse(array $keys = []): MockInterface
     {
         $mockResponse = Mockery::mock(ResponseMessage::class);
-        
+
         $defaultKeys = [
             'Response' => 'Success',
-            'Message' => 'Command completed successfully',
-            'ActionID' => 'action_' . uniqid(),
+            'Message'  => 'Command completed successfully',
+            'ActionID' => 'action_'.uniqid(),
         ];
 
         $keys = array_merge($defaultKeys, $keys);
@@ -131,17 +135,18 @@ class PamiMockFactory
      * Create an error response mock.
      *
      * @param string $message Error message
-     * @param array $keys Additional response keys
+     * @param array  $keys    Additional response keys
+     *
      * @return MockInterface
      */
     public static function createErrorResponse(string $message = 'Command failed', array $keys = []): MockInterface
     {
         $mockResponse = Mockery::mock(ResponseMessage::class);
-        
+
         $defaultKeys = [
             'Response' => 'Error',
-            'Message' => $message,
-            'ActionID' => 'action_' . uniqid(),
+            'Message'  => $message,
+            'ActionID' => 'action_'.uniqid(),
         ];
 
         $keys = array_merge($defaultKeys, $keys);
@@ -161,7 +166,8 @@ class PamiMockFactory
      * Create a mock AMI event.
      *
      * @param string $eventName Event name
-     * @param array $keys Event data keys
+     * @param array  $keys      Event data keys
+     *
      * @return MockInterface
      */
     public static function createEvent(string $eventName, array $keys = []): MockInterface
@@ -169,7 +175,7 @@ class PamiMockFactory
         $mockEvent = Mockery::mock(EventMessage::class);
 
         $defaultKeys = [
-            'Event' => $eventName,
+            'Event'     => $eventName,
             'Privilege' => 'system,all',
             'Timestamp' => time(),
         ];
@@ -189,28 +195,29 @@ class PamiMockFactory
      * Create a Dial event mock.
      *
      * @param array $customKeys Custom event keys
+     *
      * @return MockInterface
      */
     public static function createDialEvent(array $customKeys = []): MockInterface
     {
         $defaultKeys = [
-            'Channel' => 'SIP/1001-00000001',
-            'ChannelState' => '4',
-            'ChannelStateDesc' => 'Ring',
-            'CallerIDNum' => '1001',
-            'CallerIDName' => 'John Doe',
-            'ConnectedLineNum' => '1002',
-            'ConnectedLineName' => 'Jane Smith',
-            'UniqueID' => '1234567890.1',
-            'DestChannel' => 'SIP/1002-00000002',
-            'DestChannelState' => '5',
+            'Channel'              => 'SIP/1001-00000001',
+            'ChannelState'         => '4',
+            'ChannelStateDesc'     => 'Ring',
+            'CallerIDNum'          => '1001',
+            'CallerIDName'         => 'John Doe',
+            'ConnectedLineNum'     => '1002',
+            'ConnectedLineName'    => 'Jane Smith',
+            'UniqueID'             => '1234567890.1',
+            'DestChannel'          => 'SIP/1002-00000002',
+            'DestChannelState'     => '5',
             'DestChannelStateDesc' => 'Ringing',
-            'DestUniqueID' => '1234567890.2',
-            'DialStatus' => 'ANSWER',
-            'SubEvent' => 'Begin',
-            'Context' => 'internal',
-            'Extension' => '1002',
-            'Priority' => '1',
+            'DestUniqueID'         => '1234567890.2',
+            'DialStatus'           => 'ANSWER',
+            'SubEvent'             => 'Begin',
+            'Context'              => 'internal',
+            'Extension'            => '1002',
+            'Priority'             => '1',
         ];
 
         return self::createEvent('Dial', array_merge($defaultKeys, $customKeys));
@@ -220,24 +227,25 @@ class PamiMockFactory
      * Create a Hangup event mock.
      *
      * @param array $customKeys Custom event keys
+     *
      * @return MockInterface
      */
     public static function createHangupEvent(array $customKeys = []): MockInterface
     {
         $defaultKeys = [
-            'Channel' => 'SIP/1001-00000001',
-            'ChannelState' => '6',
-            'ChannelStateDesc' => 'Up',
-            'CallerIDNum' => '1001',
-            'CallerIDName' => 'John Doe',
-            'ConnectedLineNum' => '1002',
+            'Channel'           => 'SIP/1001-00000001',
+            'ChannelState'      => '6',
+            'ChannelStateDesc'  => 'Up',
+            'CallerIDNum'       => '1001',
+            'CallerIDName'      => 'John Doe',
+            'ConnectedLineNum'  => '1002',
             'ConnectedLineName' => 'Jane Smith',
-            'UniqueID' => '1234567890.1',
-            'Cause' => '16',
-            'CauseTxt' => 'Normal Clearing',
-            'Context' => 'internal',
-            'Extension' => '1002',
-            'Priority' => '1',
+            'UniqueID'          => '1234567890.1',
+            'Cause'             => '16',
+            'CauseTxt'          => 'Normal Clearing',
+            'Context'           => 'internal',
+            'Extension'         => '1002',
+            'Priority'          => '1',
         ];
 
         return self::createEvent('Hangup', array_merge($defaultKeys, $customKeys));
@@ -247,23 +255,24 @@ class PamiMockFactory
      * Create a QueueMemberAdded event mock.
      *
      * @param array $customKeys Custom event keys
+     *
      * @return MockInterface
      */
     public static function createQueueMemberAddedEvent(array $customKeys = []): MockInterface
     {
         $defaultKeys = [
-            'Queue' => 'support',
-            'Interface' => 'SIP/1001',
-            'MemberName' => 'Agent 1001',
+            'Queue'          => 'support',
+            'Interface'      => 'SIP/1001',
+            'MemberName'     => 'Agent 1001',
             'StateInterface' => 'SIP/1001',
-            'Membership' => 'dynamic',
-            'Penalty' => '0',
-            'CallsTaken' => '0',
-            'LastCall' => '0',
-            'LastPause' => '0',
-            'InCall' => '0',
-            'Status' => '1',
-            'Paused' => '0',
+            'Membership'     => 'dynamic',
+            'Penalty'        => '0',
+            'CallsTaken'     => '0',
+            'LastCall'       => '0',
+            'LastPause'      => '0',
+            'InCall'         => '0',
+            'Status'         => '1',
+            'Paused'         => '0',
         ];
 
         return self::createEvent('QueueMemberAdded', array_merge($defaultKeys, $customKeys));
@@ -273,19 +282,20 @@ class PamiMockFactory
      * Create a Bridge event mock.
      *
      * @param array $customKeys Custom event keys
+     *
      * @return MockInterface
      */
     public static function createBridgeEvent(array $customKeys = []): MockInterface
     {
         $defaultKeys = [
-            'Channel1' => 'SIP/1001-00000001',
-            'Channel2' => 'SIP/1002-00000002',
-            'UniqueID1' => '1234567890.1',
-            'UniqueID2' => '1234567890.2',
-            'CallerID1' => '1001',
-            'CallerID2' => '1002',
+            'Channel1'    => 'SIP/1001-00000001',
+            'Channel2'    => 'SIP/1002-00000002',
+            'UniqueID1'   => '1234567890.1',
+            'UniqueID2'   => '1234567890.2',
+            'CallerID1'   => '1001',
+            'CallerID2'   => '1002',
             'Bridgestate' => 'Link',
-            'Bridgetype' => 'core',
+            'Bridgetype'  => 'core',
         ];
 
         return self::createEvent('Bridge', array_merge($defaultKeys, $customKeys));
@@ -295,7 +305,8 @@ class PamiMockFactory
      * Create a mock action message.
      *
      * @param string $action Action name
-     * @param array $keys Action parameters
+     * @param array  $keys   Action parameters
+     *
      * @return MockInterface
      */
     public static function createAction(string $action, array $keys = []): MockInterface
@@ -303,8 +314,8 @@ class PamiMockFactory
         $mockAction = Mockery::mock(ActionMessage::class);
 
         $defaultKeys = [
-            'Action' => $action,
-            'ActionID' => 'action_' . uniqid(),
+            'Action'   => $action,
+            'ActionID' => 'action_'.uniqid(),
         ];
 
         $keys = array_merge($defaultKeys, $keys);
@@ -325,17 +336,18 @@ class PamiMockFactory
      * Create an Originate action mock.
      *
      * @param array $parameters Action parameters
+     *
      * @return MockInterface
      */
     public static function createOriginateAction(array $parameters = []): MockInterface
     {
         $defaultParams = [
-            'Channel' => 'SIP/1001',
-            'Context' => 'internal',
+            'Channel'   => 'SIP/1001',
+            'Context'   => 'internal',
             'Extension' => '1002',
-            'Priority' => '1',
-            'Timeout' => '30000',
-            'CallerID' => '1001',
+            'Priority'  => '1',
+            'Timeout'   => '30000',
+            'CallerID'  => '1001',
         ];
 
         return self::createAction('Originate', array_merge($defaultParams, $parameters));
@@ -345,13 +357,14 @@ class PamiMockFactory
      * Create a Hangup action mock.
      *
      * @param array $parameters Action parameters
+     *
      * @return MockInterface
      */
     public static function createHangupAction(array $parameters = []): MockInterface
     {
         $defaultParams = [
             'Channel' => 'SIP/1001-00000001',
-            'Cause' => '16',
+            'Cause'   => '16',
         ];
 
         return self::createAction('Hangup', array_merge($defaultParams, $parameters));
@@ -361,6 +374,7 @@ class PamiMockFactory
      * Create a client with event simulation capabilities.
      *
      * @param array $events Events to simulate
+     *
      * @return MockInterface
      */
     public static function createEventSimulatingClient(array $events = []): MockInterface
@@ -372,6 +386,7 @@ class PamiMockFactory
         $mockClient->shouldReceive('registerEventListener')
             ->andReturnUsing(function ($callback, $predicate = null) use (&$eventListeners) {
                 $eventListeners[] = ['callback' => $callback, 'predicate' => $predicate];
+
                 return true;
             });
 
@@ -398,6 +413,7 @@ class PamiMockFactory
      * Create a client that simulates connection timeouts.
      *
      * @param int $timeoutAfterSeconds Seconds before timeout
+     *
      * @return MockInterface
      */
     public static function createTimeoutClient(int $timeoutAfterSeconds = 5): MockInterface
@@ -405,6 +421,7 @@ class PamiMockFactory
         return self::createClient([
             'open' => function () use ($timeoutAfterSeconds) {
                 sleep($timeoutAfterSeconds);
+
                 throw new \Exception('Connection timeout');
             },
             'send' => function () {
@@ -417,6 +434,7 @@ class PamiMockFactory
      * Create a performance testing client with delays.
      *
      * @param float $delaySeconds Delay in seconds for each operation
+     *
      * @return MockInterface
      */
     public static function createSlowClient(float $delaySeconds = 1.0): MockInterface
@@ -424,6 +442,7 @@ class PamiMockFactory
         return self::createClient([
             'send' => function () use ($delaySeconds) {
                 usleep($delaySeconds * 1000000);
+
                 return self::createSuccessResponse();
             },
         ]);

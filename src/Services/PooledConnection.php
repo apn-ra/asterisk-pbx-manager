@@ -2,22 +2,21 @@
 
 namespace AsteriskPbxManager\Services;
 
+use AsteriskPbxManager\Exceptions\ActionExecutionException;
+use AsteriskPbxManager\Exceptions\AsteriskConnectionException;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use PAMI\Client\Impl\ClientImpl;
 use PAMI\Message\Action\ActionMessage;
 use PAMI\Message\Response\ResponseMessage;
-use AsteriskPbxManager\Exceptions\AsteriskConnectionException;
-use AsteriskPbxManager\Exceptions\ActionExecutionException;
-use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 /**
  * Pooled Connection wrapper for Asterisk AMI connections.
- * 
+ *
  * Wraps a PAMI ClientImpl with pooling functionality including
  * state management, health monitoring, usage statistics, and
  * automatic recycling capabilities.
- * 
- * @package AsteriskPbxManager\Services
+ *
  * @author Asterisk PBX Manager Team
  */
 class PooledConnection
@@ -86,13 +85,13 @@ class PooledConnection
      * @var array
      */
     protected array $stats = [
-        'requests_handled' => 0,
-        'total_connect_time' => 0,
-        'total_execution_time' => 0,
-        'successful_requests' => 0,
-        'failed_requests' => 0,
+        'requests_handled'      => 0,
+        'total_connect_time'    => 0,
+        'total_execution_time'  => 0,
+        'successful_requests'   => 0,
+        'failed_requests'       => 0,
         'health_check_failures' => 0,
-        'last_error' => null,
+        'last_error'            => null,
     ];
 
     /**
@@ -113,8 +112,8 @@ class PooledConnection
      * Create a new Pooled Connection instance.
      *
      * @param ClientImpl $client
-     * @param string $id
-     * @param array $config
+     * @param string     $id
+     * @param array      $config
      */
     public function __construct(ClientImpl $client, string $id, array $config = [])
     {
@@ -122,13 +121,13 @@ class PooledConnection
         $this->id = $id;
         $this->config = array_merge([
             'max_requests_per_connection' => 1000,
-            'max_connection_age' => 3600, // 1 hour
-            'health_check_interval' => 60, // 1 minute
-            'enable_health_monitoring' => true,
+            'max_connection_age'          => 3600, // 1 hour
+            'health_check_interval'       => 60, // 1 minute
+            'enable_health_monitoring'    => true,
             'enable_connection_recycling' => true,
-            'pooled' => true,
+            'pooled'                      => true,
         ], $config);
-        
+
         $this->createdAt = now();
         $this->lastUsed = now();
     }
@@ -136,8 +135,9 @@ class PooledConnection
     /**
      * Connect to Asterisk AMI.
      *
-     * @return void
      * @throws AsteriskConnectionException
+     *
+     * @return void
      */
     public function connect(): void
     {
@@ -149,33 +149,32 @@ class PooledConnection
             $this->state = self::STATE_IDLE;
             $this->healthy = true;
             $this->lastError = null;
-            
+
             $connectTime = microtime(true) - $startTime;
             $this->stats['total_connect_time'] += $connectTime;
 
             Log::debug('Pooled connection established', [
                 'connection_id' => $this->id,
-                'connect_time' => $connectTime,
+                'connect_time'  => $connectTime,
             ]);
-
         } catch (\Exception $e) {
             $this->state = self::STATE_ERROR;
             $this->healthy = false;
             $this->lastError = [
-                'message' => $e->getMessage(),
+                'message'   => $e->getMessage(),
                 'timestamp' => now(),
-                'type' => 'connection_error',
+                'type'      => 'connection_error',
             ];
 
             Log::error('Failed to establish pooled connection', [
                 'connection_id' => $this->id,
-                'error' => $e->getMessage(),
+                'error'         => $e->getMessage(),
             ]);
 
             throw AsteriskConnectionException::networkError(
                 $this->config['host'] ?? 'localhost',
                 $this->config['port'] ?? 5038,
-                'Failed to connect pooled connection: ' . $e->getMessage()
+                'Failed to connect pooled connection: '.$e->getMessage()
             );
         }
     }
@@ -194,7 +193,7 @@ class PooledConnection
         } catch (\Exception $e) {
             Log::warning('Error closing pooled connection', [
                 'connection_id' => $this->id,
-                'error' => $e->getMessage(),
+                'error'         => $e->getMessage(),
             ]);
         } finally {
             $this->state = self::STATE_DISCONNECTED;
@@ -206,8 +205,10 @@ class PooledConnection
      * Send an action through the connection.
      *
      * @param ActionMessage $action
-     * @return ResponseMessage
+     *
      * @throws ActionExecutionException
+     *
+     * @return ResponseMessage
      */
     public function sendAction(ActionMessage $action): ResponseMessage
     {
@@ -219,22 +220,21 @@ class PooledConnection
         }
 
         $startTime = microtime(true);
-        
+
         try {
             $response = $this->client->send($action);
-            
+
             $executionTime = microtime(true) - $startTime;
             $this->updateStats(true, $executionTime);
-            
-            return $response;
 
+            return $response;
         } catch (\Exception $e) {
             $executionTime = microtime(true) - $startTime;
             $this->updateStats(false, $executionTime, $e->getMessage());
-            
+
             throw ActionExecutionException::executionFailed(
                 $action->getActionID() ?? 'unknown',
-                'Action execution failed on pooled connection: ' . $e->getMessage()
+                'Action execution failed on pooled connection: '.$e->getMessage()
             );
         }
     }
@@ -299,8 +299,8 @@ class PooledConnection
         // Perform periodic health check if enabled
         if ($this->config['enable_health_monitoring'] ?? true) {
             $interval = $this->config['health_check_interval'] ?? 60;
-            
-            if ($this->lastHealthCheck === null || 
+
+            if ($this->lastHealthCheck === null ||
                 now()->diffInSeconds($this->lastHealthCheck) >= $interval) {
                 return $this->performHealthCheck();
             }
@@ -322,6 +322,7 @@ class PooledConnection
             // Simple ping test - try to send a basic command
             if ($this->state === self::STATE_DISCONNECTED || $this->state === self::STATE_ERROR) {
                 $this->healthy = false;
+
                 return false;
             }
 
@@ -329,21 +330,20 @@ class PooledConnection
             // Note: PAMI doesn't provide a direct way to check this,
             // so we rely on the client's internal state
             $this->healthy = true;
-            
-            return true;
 
+            return true;
         } catch (\Exception $e) {
             $this->healthy = false;
             $this->stats['health_check_failures']++;
             $this->lastError = [
-                'message' => $e->getMessage(),
+                'message'   => $e->getMessage(),
                 'timestamp' => now(),
-                'type' => 'health_check_error',
+                'type'      => 'health_check_error',
             ];
 
             Log::warning('Health check failed for pooled connection', [
                 'connection_id' => $this->id,
-                'error' => $e->getMessage(),
+                'error'         => $e->getMessage(),
             ]);
 
             return false;
@@ -426,6 +426,7 @@ class PooledConnection
      * Set the last used timestamp.
      *
      * @param Carbon $timestamp
+     *
      * @return void
      */
     public function setLastUsed(Carbon $timestamp): void
@@ -441,15 +442,15 @@ class PooledConnection
     public function getStats(): array
     {
         return array_merge($this->stats, [
-            'connection_id' => $this->id,
-            'state' => $this->state,
-            'healthy' => $this->healthy,
-            'age_seconds' => $this->getAge(),
-            'created_at' => $this->createdAt->toISOString(),
-            'last_used' => $this->lastUsed->toISOString(),
+            'connection_id'     => $this->id,
+            'state'             => $this->state,
+            'healthy'           => $this->healthy,
+            'age_seconds'       => $this->getAge(),
+            'created_at'        => $this->createdAt->toISOString(),
+            'last_used'         => $this->lastUsed->toISOString(),
             'last_health_check' => $this->lastHealthCheck?->toISOString(),
-            'should_recycle' => $this->shouldRecycle(),
-            'last_error' => $this->lastError,
+            'should_recycle'    => $this->shouldRecycle(),
+            'last_error'        => $this->lastError,
         ]);
     }
 
@@ -466,9 +467,10 @@ class PooledConnection
     /**
      * Update connection statistics.
      *
-     * @param bool $success
-     * @param float $executionTime
+     * @param bool        $success
+     * @param float       $executionTime
      * @param string|null $error
+     *
      * @return void
      */
     protected function updateStats(bool $success, float $executionTime, ?string $error = null): void
@@ -481,7 +483,7 @@ class PooledConnection
         } else {
             $this->stats['failed_requests']++;
             $this->stats['last_error'] = $error;
-            
+
             if ($this->stats['failed_requests'] > 5) {
                 $this->healthy = false;
             }
@@ -490,7 +492,7 @@ class PooledConnection
 
     /**
      * Get the underlying PAMI client.
-     * 
+     *
      * This method is provided for compatibility but should be used sparingly
      * as it bypasses the pooling layer.
      *
@@ -519,14 +521,14 @@ class PooledConnection
     public function getConnectionInfo(): array
     {
         return [
-            'id' => $this->id,
-            'state' => $this->state,
-            'healthy' => $this->healthy,
-            'pooled' => $this->isPooled(),
-            'age' => $this->getAge(),
+            'id'               => $this->id,
+            'state'            => $this->state,
+            'healthy'          => $this->healthy,
+            'pooled'           => $this->isPooled(),
+            'age'              => $this->getAge(),
             'requests_handled' => $this->getRequestCount(),
-            'created_at' => $this->createdAt,
-            'last_used' => $this->lastUsed,
+            'created_at'       => $this->createdAt,
+            'last_used'        => $this->lastUsed,
         ];
     }
 

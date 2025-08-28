@@ -46,7 +46,7 @@ class CallConnected extends AsteriskEvent
     public function __construct(?EventMessage $event = null)
     {
         parent::__construct($event);
-        
+
         if ($event) {
             $this->extractCallData($event);
         }
@@ -61,22 +61,22 @@ class CallConnected extends AsteriskEvent
     {
         // Extract destination information
         $this->destination = $event->getKey('DestChannel') ?? $event->getKey('Destination');
-        
+
         // Extract connected line information
         $this->connectedLineNum = $event->getKey('ConnectedLineNum');
         $this->connectedLineName = $event->getKey('ConnectedLineName');
-        
+
         // Determine call direction based on available data
         $this->direction = $this->determineCallDirection($event);
-        
+
         // Add call-specific data to the data array
         $this->data = array_merge($this->data, [
-            'destination' => $this->destination,
-            'connected_line_num' => $this->connectedLineNum,
+            'destination'         => $this->destination,
+            'connected_line_num'  => $this->connectedLineNum,
             'connected_line_name' => $this->connectedLineName,
-            'direction' => $this->direction,
-            'dial_status' => $event->getKey('DialStatus'),
-            'sub_event' => $event->getKey('SubEvent'),
+            'direction'           => $this->direction,
+            'dial_status'         => $event->getKey('DialStatus'),
+            'sub_event'           => $event->getKey('SubEvent'),
         ]);
     }
 
@@ -84,22 +84,24 @@ class CallConnected extends AsteriskEvent
      * Determine the call direction based on event data.
      *
      * @param EventMessage $event
+     *
      * @return string|null
      */
     protected function determineCallDirection(EventMessage $event): ?string
     {
         $channel = $event->getKey('Channel');
         $callerIdNum = $event->getKey('CallerIDNum');
-        
-        // Basic heuristic: if channel starts with SIP/ and CallerIDNum is numeric, 
+
+        // Basic heuristic: if channel starts with SIP/ and CallerIDNum is numeric,
         // it's likely an inbound call
         if ($channel && str_starts_with($channel, 'SIP/')) {
             if ($callerIdNum && is_numeric($callerIdNum) && strlen($callerIdNum) >= 10) {
                 return 'inbound';
             }
+
             return 'outbound';
         }
-        
+
         return null;
     }
 
@@ -123,9 +125,9 @@ class CallConnected extends AsteriskEvent
             $channels[] = "{$channelPrefix}.calls.{$this->getUniqueId()}";
         }
 
-        return $isPrivate 
-            ? array_map(fn($ch) => new \Illuminate\Broadcasting\PrivateChannel($ch), $channels)
-            : array_map(fn($ch) => new Channel($ch), $channels);
+        return $isPrivate
+            ? array_map(fn ($ch) => new \Illuminate\Broadcasting\PrivateChannel($ch), $channels)
+            : array_map(fn ($ch) => new Channel($ch), $channels);
     }
 
     /**
@@ -146,18 +148,18 @@ class CallConnected extends AsteriskEvent
     public function broadcastWith(): array
     {
         return [
-            'event_type' => 'call_connected',
-            'timestamp' => $this->timestamp,
-            'channel' => $this->getChannel(),
-            'unique_id' => $this->getUniqueId(),
-            'caller_id_num' => $this->getCallerIdNum(),
-            'caller_id_name' => $this->getCallerIdName(),
-            'destination' => $this->destination,
-            'connected_line_num' => $this->connectedLineNum,
+            'event_type'          => 'call_connected',
+            'timestamp'           => $this->timestamp,
+            'channel'             => $this->getChannel(),
+            'unique_id'           => $this->getUniqueId(),
+            'caller_id_num'       => $this->getCallerIdNum(),
+            'caller_id_name'      => $this->getCallerIdName(),
+            'destination'         => $this->destination,
+            'connected_line_num'  => $this->connectedLineNum,
             'connected_line_name' => $this->connectedLineName,
-            'direction' => $this->direction,
-            'extension' => $this->getExtension(),
-            'context' => $this->getContext(),
+            'direction'           => $this->direction,
+            'extension'           => $this->getExtension(),
+            'context'             => $this->getContext(),
         ];
     }
 

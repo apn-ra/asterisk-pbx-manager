@@ -4,32 +4,32 @@ declare(strict_types=1);
 
 namespace AsteriskPbxManager\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Eloquent model for audit logs.
- * 
+ *
  * This model represents audit log entries that track all AMI actions
  * performed through the Asterisk PBX Manager package.
- * 
- * @property int $id
- * @property string $action_type
- * @property string $action_name
- * @property int|null $user_id
+ *
+ * @property int         $id
+ * @property string      $action_type
+ * @property string      $action_name
+ * @property int|null    $user_id
  * @property string|null $user_name
  * @property string|null $ip_address
  * @property string|null $user_agent
  * @property string|null $session_id
- * @property Carbon $timestamp
- * @property bool $success
- * @property float $execution_time
- * @property array|null $request_data
- * @property array|null $response_data
- * @property array|null $additional_context
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property Carbon      $timestamp
+ * @property bool        $success
+ * @property float       $execution_time
+ * @property array|null  $request_data
+ * @property array|null  $response_data
+ * @property array|null  $additional_context
+ * @property Carbon      $created_at
+ * @property Carbon      $updated_at
  */
 class AuditLog extends Model
 {
@@ -67,12 +67,12 @@ class AuditLog extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'user_id' => 'integer',
-        'timestamp' => 'datetime',
-        'success' => 'boolean',
-        'execution_time' => 'decimal:6',
-        'request_data' => 'array',
-        'response_data' => 'array',
+        'user_id'            => 'integer',
+        'timestamp'          => 'datetime',
+        'success'            => 'boolean',
+        'execution_time'     => 'decimal:6',
+        'request_data'       => 'array',
+        'response_data'      => 'array',
         'additional_context' => 'array',
     ];
 
@@ -87,7 +87,7 @@ class AuditLog extends Model
 
     /**
      * Get the user associated with the audit log.
-     * 
+     *
      * Note: This relationship is intentionally flexible and doesn't enforce
      * foreign key constraints to allow logging even when user records are deleted.
      *
@@ -99,7 +99,7 @@ class AuditLog extends Model
         if (class_exists('App\Models\User')) {
             return $this->belongsTo('App\Models\User');
         }
-        
+
         return null;
     }
 
@@ -107,6 +107,7 @@ class AuditLog extends Model
      * Scope a query to only include successful actions.
      *
      * @param Builder $query
+     *
      * @return Builder
      */
     public function scopeSuccessful(Builder $query): Builder
@@ -118,6 +119,7 @@ class AuditLog extends Model
      * Scope a query to only include failed actions.
      *
      * @param Builder $query
+     *
      * @return Builder
      */
     public function scopeFailed(Builder $query): Builder
@@ -129,6 +131,7 @@ class AuditLog extends Model
      * Scope a query to only include AMI actions (excluding connection events).
      *
      * @param Builder $query
+     *
      * @return Builder
      */
     public function scopeAmiActions(Builder $query): Builder
@@ -140,6 +143,7 @@ class AuditLog extends Model
      * Scope a query to only include connection events.
      *
      * @param Builder $query
+     *
      * @return Builder
      */
     public function scopeConnectionEvents(Builder $query): Builder
@@ -151,7 +155,8 @@ class AuditLog extends Model
      * Scope a query to filter by specific action name.
      *
      * @param Builder $query
-     * @param string $actionName
+     * @param string  $actionName
+     *
      * @return Builder
      */
     public function scopeByAction(Builder $query, string $actionName): Builder
@@ -163,7 +168,8 @@ class AuditLog extends Model
      * Scope a query to filter by user ID.
      *
      * @param Builder $query
-     * @param int $userId
+     * @param int     $userId
+     *
      * @return Builder
      */
     public function scopeByUser(Builder $query, int $userId): Builder
@@ -175,7 +181,8 @@ class AuditLog extends Model
      * Scope a query to filter by IP address.
      *
      * @param Builder $query
-     * @param string $ipAddress
+     * @param string  $ipAddress
+     *
      * @return Builder
      */
     public function scopeByIpAddress(Builder $query, string $ipAddress): Builder
@@ -187,8 +194,9 @@ class AuditLog extends Model
      * Scope a query to filter records within a date range.
      *
      * @param Builder $query
-     * @param Carbon $startDate
-     * @param Carbon $endDate
+     * @param Carbon  $startDate
+     * @param Carbon  $endDate
+     *
      * @return Builder
      */
     public function scopeInDateRange(Builder $query, Carbon $startDate, Carbon $endDate): Builder
@@ -200,7 +208,8 @@ class AuditLog extends Model
      * Scope a query to filter records from the last N days.
      *
      * @param Builder $query
-     * @param int $days
+     * @param int     $days
+     *
      * @return Builder
      */
     public function scopeLastDays(Builder $query, int $days): Builder
@@ -212,6 +221,7 @@ class AuditLog extends Model
      * Scope a query to order by most recent first.
      *
      * @param Builder $query
+     *
      * @return Builder
      */
     public function scopeRecent(Builder $query): Builder
@@ -223,6 +233,7 @@ class AuditLog extends Model
      * Scope a query to order by oldest first.
      *
      * @param Builder $query
+     *
      * @return Builder
      */
     public function scopeOldest(Builder $query): Builder
@@ -250,7 +261,7 @@ class AuditLog extends Model
         $user = $this->user_name ? "by {$this->user_name}" : 'by anonymous user';
         $status = $this->success ? 'succeeded' : 'failed';
         $time = number_format($this->getExecutionTimeInMilliseconds(), 2);
-        
+
         return "Action '{$this->action_name}' {$status} in {$time}ms {$user} from {$this->ip_address}";
     }
 
@@ -258,6 +269,7 @@ class AuditLog extends Model
      * Get statistics for audit logs.
      *
      * @param Builder|null $query Optional query builder to apply filters
+     *
      * @return array
      */
     public static function getStatistics(?Builder $query = null): array
@@ -272,12 +284,12 @@ class AuditLog extends Model
         $avgExecutionTime = (clone $query)->avg('execution_time') ?: 0.0;
 
         return [
-            'total_actions' => $total,
-            'successful_actions' => $successful,
-            'failed_actions' => $failed,
-            'success_rate' => $total > 0 ? ($successful / $total) * 100 : 0.0,
-            'failure_rate' => $total > 0 ? ($failed / $total) * 100 : 0.0,
-            'average_execution_time' => round($avgExecutionTime, 6),
+            'total_actions'             => $total,
+            'successful_actions'        => $successful,
+            'failed_actions'            => $failed,
+            'success_rate'              => $total > 0 ? ($successful / $total) * 100 : 0.0,
+            'failure_rate'              => $total > 0 ? ($failed / $total) * 100 : 0.0,
+            'average_execution_time'    => round($avgExecutionTime, 6),
             'average_execution_time_ms' => round($avgExecutionTime * 1000, 2),
         ];
     }
@@ -285,8 +297,9 @@ class AuditLog extends Model
     /**
      * Get the most common actions from audit logs.
      *
-     * @param int $limit
+     * @param int          $limit
      * @param Builder|null $query Optional query builder to apply filters
+     *
      * @return array
      */
     public static function getMostCommonActions(int $limit = 10, ?Builder $query = null): array
@@ -307,6 +320,7 @@ class AuditLog extends Model
             ->map(function ($item) {
                 $item->success_rate = $item->count > 0 ? ($item->success_count / $item->count) * 100 : 0.0;
                 $item->avg_execution_time_ms = round($item->avg_execution_time * 1000, 2);
+
                 return $item;
             })
             ->toArray();
@@ -316,12 +330,13 @@ class AuditLog extends Model
      * Clean up old audit log entries.
      *
      * @param int $daysToKeep Number of days to keep audit logs
+     *
      * @return int Number of deleted records
      */
     public static function cleanup(int $daysToKeep = 90): int
     {
         $cutoffDate = Carbon::now()->subDays($daysToKeep);
-        
+
         return static::where('timestamp', '<', $cutoffDate)->delete();
     }
 }

@@ -2,11 +2,10 @@
 
 namespace AsteriskPbxManager\Tests\Integration;
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
-use AsteriskPbxManager\Models\CallLog;
 use AsteriskPbxManager\Models\AsteriskEvent;
+use AsteriskPbxManager\Models\CallLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 class DatabaseMigrationTest extends IntegrationTestCase
 {
@@ -34,7 +33,7 @@ class DatabaseMigrationTest extends IntegrationTestCase
             'transferred_by', 'recorded', 'recording_filename', 'recording_path', 'recording_size',
             'account_code', 'cost', 'cost_currency', 'cost_per_minute', 'metadata',
             'channel_variables', 'asterisk_server', 'processed_by', 'processed_at',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at',
         ];
 
         foreach ($expectedColumns as $column) {
@@ -61,7 +60,7 @@ class DatabaseMigrationTest extends IntegrationTestCase
             'filename', 'format', 'variable', 'value', 'event_data', 'parsed_data', 'metadata',
             'server_id', 'asterisk_version', 'server_ip', 'processing_status', 'is_significant',
             'needs_action', 'error_message', 'call_log_id', 'parent_event_id', 'correlation_id',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at',
         ];
 
         foreach ($expectedColumns as $column) {
@@ -193,17 +192,17 @@ class DatabaseMigrationTest extends IntegrationTestCase
     public function test_call_log_model_can_be_created()
     {
         $callLog = CallLog::create([
-            'channel' => 'SIP/1001-00000001',
-            'unique_id' => '1234567890.1',
-            'caller_id_num' => '1001',
+            'channel'        => 'SIP/1001-00000001',
+            'unique_id'      => '1234567890.1',
+            'caller_id_num'  => '1001',
             'caller_id_name' => 'John Doe',
-            'connected_to' => '1002',
-            'context' => 'internal',
-            'extension' => '1002',
-            'direction' => 'outbound',
-            'call_type' => 'voice',
-            'started_at' => now(),
-            'call_status' => 'connected',
+            'connected_to'   => '1002',
+            'context'        => 'internal',
+            'extension'      => '1002',
+            'direction'      => 'outbound',
+            'call_type'      => 'voice',
+            'started_at'     => now(),
+            'call_status'    => 'connected',
         ]);
 
         $this->assertInstanceOf(CallLog::class, $callLog);
@@ -215,17 +214,17 @@ class DatabaseMigrationTest extends IntegrationTestCase
     public function test_asterisk_event_model_can_be_created()
     {
         $event = AsteriskEvent::create([
-            'event_name' => 'Dial',
-            'event_type' => 'call',
-            'event_timestamp' => now(),
-            'channel' => 'SIP/1001-00000001',
-            'unique_id' => '1234567890.1',
-            'caller_id_num' => '1001',
-            'context' => 'internal',
-            'extension' => '1002',
+            'event_name'        => 'Dial',
+            'event_type'        => 'call',
+            'event_timestamp'   => now(),
+            'channel'           => 'SIP/1001-00000001',
+            'unique_id'         => '1234567890.1',
+            'caller_id_num'     => '1001',
+            'context'           => 'internal',
+            'extension'         => '1002',
             'processing_status' => 'pending',
-            'is_significant' => false,
-            'needs_action' => false,
+            'is_significant'    => false,
+            'needs_action'      => false,
         ]);
 
         $this->assertInstanceOf(AsteriskEvent::class, $event);
@@ -237,19 +236,19 @@ class DatabaseMigrationTest extends IntegrationTestCase
     public function test_call_log_has_many_events_relationship()
     {
         $callLog = CallLog::create([
-            'channel' => 'SIP/1001-00000001',
-            'unique_id' => '1234567890.1',
+            'channel'       => 'SIP/1001-00000001',
+            'unique_id'     => '1234567890.1',
             'caller_id_num' => '1001',
-            'started_at' => now(),
-            'call_status' => 'connected',
+            'started_at'    => now(),
+            'call_status'   => 'connected',
         ]);
 
         $event = AsteriskEvent::create([
-            'event_name' => 'Dial',
-            'event_timestamp' => now(),
-            'channel' => 'SIP/1001-00000001',
-            'unique_id' => '1234567890.1',
-            'call_log_id' => $callLog->id,
+            'event_name'        => 'Dial',
+            'event_timestamp'   => now(),
+            'channel'           => 'SIP/1001-00000001',
+            'unique_id'         => '1234567890.1',
+            'call_log_id'       => $callLog->id,
             'processing_status' => 'pending',
         ]);
 
@@ -261,19 +260,19 @@ class DatabaseMigrationTest extends IntegrationTestCase
     public function test_asterisk_event_belongs_to_call_log_relationship()
     {
         $callLog = CallLog::create([
-            'channel' => 'SIP/1001-00000001',
-            'unique_id' => '1234567890.1',
+            'channel'       => 'SIP/1001-00000001',
+            'unique_id'     => '1234567890.1',
             'caller_id_num' => '1001',
-            'started_at' => now(),
-            'call_status' => 'connected',
+            'started_at'    => now(),
+            'call_status'   => 'connected',
         ]);
 
         $event = AsteriskEvent::create([
-            'event_name' => 'Dial',
-            'event_timestamp' => now(),
-            'channel' => 'SIP/1001-00000001',
-            'unique_id' => '1234567890.1',
-            'call_log_id' => $callLog->id,
+            'event_name'        => 'Dial',
+            'event_timestamp'   => now(),
+            'channel'           => 'SIP/1001-00000001',
+            'unique_id'         => '1234567890.1',
+            'call_log_id'       => $callLog->id,
             'processing_status' => 'pending',
         ]);
 
@@ -285,19 +284,19 @@ class DatabaseMigrationTest extends IntegrationTestCase
     public function test_asterisk_event_self_referential_relationship()
     {
         $parentEvent = AsteriskEvent::create([
-            'event_name' => 'DialBegin',
-            'event_timestamp' => now(),
-            'channel' => 'SIP/1001-00000001',
-            'unique_id' => '1234567890.1',
+            'event_name'        => 'DialBegin',
+            'event_timestamp'   => now(),
+            'channel'           => 'SIP/1001-00000001',
+            'unique_id'         => '1234567890.1',
             'processing_status' => 'processed',
         ]);
 
         $childEvent = AsteriskEvent::create([
-            'event_name' => 'DialEnd',
-            'event_timestamp' => now()->addSeconds(10),
-            'channel' => 'SIP/1001-00000001',
-            'unique_id' => '1234567890.1',
-            'parent_event_id' => $parentEvent->id,
+            'event_name'        => 'DialEnd',
+            'event_timestamp'   => now()->addSeconds(10),
+            'channel'           => 'SIP/1001-00000001',
+            'unique_id'         => '1234567890.1',
+            'parent_event_id'   => $parentEvent->id,
             'processing_status' => 'pending',
         ]);
 
@@ -315,20 +314,20 @@ class DatabaseMigrationTest extends IntegrationTestCase
     {
         // Create test data
         CallLog::create([
-            'channel' => 'SIP/1001-00000001',
-            'caller_id_num' => '1001',
-            'direction' => 'inbound',
-            'call_status' => 'connected',
-            'started_at' => now()->subHours(2),
+            'channel'        => 'SIP/1001-00000001',
+            'caller_id_num'  => '1001',
+            'direction'      => 'inbound',
+            'call_status'    => 'connected',
+            'started_at'     => now()->subHours(2),
             'total_duration' => 120,
         ]);
 
         CallLog::create([
-            'channel' => 'SIP/1002-00000002',
-            'caller_id_num' => '1002',
-            'direction' => 'outbound',
-            'call_status' => 'missed',
-            'started_at' => now()->subHour(),
+            'channel'        => 'SIP/1002-00000002',
+            'caller_id_num'  => '1002',
+            'direction'      => 'outbound',
+            'call_status'    => 'missed',
+            'started_at'     => now()->subHour(),
             'total_duration' => 0,
         ]);
 
@@ -347,23 +346,23 @@ class DatabaseMigrationTest extends IntegrationTestCase
     {
         // Create test data
         AsteriskEvent::create([
-            'event_name' => 'Dial',
-            'event_type' => 'call',
-            'event_timestamp' => now()->subHours(2),
-            'channel' => 'SIP/1001-00000001',
+            'event_name'        => 'Dial',
+            'event_type'        => 'call',
+            'event_timestamp'   => now()->subHours(2),
+            'channel'           => 'SIP/1001-00000001',
             'processing_status' => 'processed',
-            'is_significant' => true,
-            'needs_action' => false,
+            'is_significant'    => true,
+            'needs_action'      => false,
         ]);
 
         AsteriskEvent::create([
-            'event_name' => 'QueueMemberAdded',
-            'event_type' => 'queue',
-            'event_timestamp' => now()->subHour(),
-            'queue' => 'support',
+            'event_name'        => 'QueueMemberAdded',
+            'event_type'        => 'queue',
+            'event_timestamp'   => now()->subHour(),
+            'queue'             => 'support',
             'processing_status' => 'pending',
-            'is_significant' => false,
-            'needs_action' => true,
+            'is_significant'    => false,
+            'needs_action'      => true,
         ]);
 
         // Test scopes
@@ -380,16 +379,16 @@ class DatabaseMigrationTest extends IntegrationTestCase
     public function test_models_can_handle_json_fields()
     {
         $metadata = [
-            'custom_field' => 'custom_value',
+            'custom_field'    => 'custom_value',
             'quality_metrics' => ['jitter' => 0.5, 'latency' => 120],
         ];
 
         $callLog = CallLog::create([
-            'channel' => 'SIP/1001-00000001',
+            'channel'       => 'SIP/1001-00000001',
             'caller_id_num' => '1001',
-            'started_at' => now(),
-            'call_status' => 'connected',
-            'metadata' => $metadata,
+            'started_at'    => now(),
+            'call_status'   => 'connected',
+            'metadata'      => $metadata,
         ]);
 
         $this->assertEquals($metadata, $callLog->metadata);
@@ -397,16 +396,16 @@ class DatabaseMigrationTest extends IntegrationTestCase
         $this->assertEquals(0.5, $callLog->metadata['quality_metrics']['jitter']);
 
         $eventData = [
-            'raw_event' => ['Event' => 'Dial', 'Channel' => 'SIP/1001'],
+            'raw_event'     => ['Event' => 'Dial', 'Channel' => 'SIP/1001'],
             'parsed_fields' => ['direction' => 'outbound'],
         ];
 
         $event = AsteriskEvent::create([
-            'event_name' => 'Dial',
-            'event_timestamp' => now(),
-            'channel' => 'SIP/1001-00000001',
+            'event_name'        => 'Dial',
+            'event_timestamp'   => now(),
+            'channel'           => 'SIP/1001-00000001',
             'processing_status' => 'pending',
-            'event_data' => $eventData,
+            'event_data'        => $eventData,
         ]);
 
         $this->assertEquals($eventData, $event->event_data);

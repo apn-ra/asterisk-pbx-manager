@@ -2,16 +2,12 @@
 
 namespace AsteriskPbxManager\Services;
 
-use PAMI\Message\Event\EventMessage;
-use PAMI\Message\Event\DialEvent;
-use PAMI\Message\Event\HangupEvent;
-use PAMI\Message\Event\BridgeEvent;
-use PAMI\Message\Event\QueueMemberAddedEvent;
-use Illuminate\Support\Facades\Log;
+use AsteriskPbxManager\Events\AsteriskEvent;
 use AsteriskPbxManager\Events\CallConnected;
 use AsteriskPbxManager\Events\CallEnded;
 use AsteriskPbxManager\Events\QueueMemberAdded;
-use AsteriskPbxManager\Events\AsteriskEvent;
+use Illuminate\Support\Facades\Log;
+use PAMI\Message\Event\EventMessage;
 
 /**
  * Service for processing Asterisk AMI events with advanced routing.
@@ -24,10 +20,10 @@ class EventProcessor
      * @var array
      */
     protected array $statistics = [
-        'total_events' => 0,
+        'total_events'     => 0,
         'processed_events' => 0,
-        'failed_events' => 0,
-        'event_types' => [],
+        'failed_events'    => 0,
+        'event_types'      => [],
     ];
 
     /**
@@ -48,14 +44,15 @@ class EventProcessor
      * Process an incoming AMI event.
      *
      * @param EventMessage $event
+     *
      * @return void
      */
     public function processEvent(EventMessage $event): void
     {
         $this->statistics['total_events']++;
-        
+
         $eventName = $event->getEventName();
-        
+
         // Update statistics
         if (!isset($this->statistics['event_types'][$eventName])) {
             $this->statistics['event_types'][$eventName] = 0;
@@ -65,12 +62,13 @@ class EventProcessor
         try {
             $this->logInfo("Processing Asterisk event: {$eventName}", [
                 'event' => $eventName,
-                'keys' => $event->getKeys(),
+                'keys'  => $event->getKeys(),
             ]);
 
             // Check event filters
             if (!$this->shouldProcessEvent($event)) {
                 $this->logInfo("Event {$eventName} filtered out", ['event' => $eventName]);
+
                 return;
             }
 
@@ -78,6 +76,7 @@ class EventProcessor
             if ($this->hasCustomHandler($eventName)) {
                 $this->processCustomEvent($event);
                 $this->statistics['processed_events']++;
+
                 return;
             }
 
@@ -144,37 +143,37 @@ class EventProcessor
         $destination = $event->getKey('Destination') ?? $event->getKey('DestChannel');
 
         $this->logInfo('Processing dial event', [
-            'sub_event' => $subEvent,
-            'channel' => $channel,
+            'sub_event'   => $subEvent,
+            'channel'     => $channel,
             'destination' => $destination,
         ]);
 
         if ($subEvent === 'Begin') {
             $this->logInfo('Call initiated', [
-                'channel' => $channel,
+                'channel'     => $channel,
                 'destination' => $destination,
             ]);
-            
+
             // Fire generic dial begin event
             event(new AsteriskEvent($event));
         } elseif ($subEvent === 'End') {
             $dialStatus = $event->getKey('DialStatus');
-            
+
             if ($dialStatus === 'ANSWER') {
                 $this->logInfo('Call connected', [
-                    'channel' => $channel,
+                    'channel'     => $channel,
                     'destination' => $destination,
                 ]);
-                
+
                 // Fire call connected event
                 event(new CallConnected($event));
             } else {
                 $this->logInfo('Call failed to connect', [
-                    'channel' => $channel,
+                    'channel'     => $channel,
                     'destination' => $destination,
-                    'status' => $dialStatus,
+                    'status'      => $dialStatus,
                 ]);
-                
+
                 // Fire generic dial event for failed calls
                 event(new AsteriskEvent($event));
             }
@@ -193,8 +192,8 @@ class EventProcessor
         $causeText = $event->getKey('Cause-txt');
 
         $this->logInfo('Call ended', [
-            'channel' => $channel,
-            'cause' => $cause,
+            'channel'    => $channel,
+            'cause'      => $cause,
             'cause_text' => $causeText,
         ]);
 
@@ -214,7 +213,7 @@ class EventProcessor
         $channel2 = $event->getKey('Channel2');
 
         $this->logInfo('Bridge event', [
-            'state' => $bridgeState,
+            'state'    => $bridgeState,
             'channel1' => $channel1,
             'channel2' => $channel2,
         ]);
@@ -235,8 +234,8 @@ class EventProcessor
         $memberName = $event->getKey('MemberName');
 
         $this->logInfo('Queue member added', [
-            'queue' => $queue,
-            'interface' => $interface,
+            'queue'       => $queue,
+            'interface'   => $interface,
             'member_name' => $memberName,
         ]);
 
@@ -255,7 +254,7 @@ class EventProcessor
         $interface = $event->getKey('Interface');
 
         $this->logInfo('Queue member removed', [
-            'queue' => $queue,
+            'queue'     => $queue,
             'interface' => $interface,
         ]);
 
@@ -275,9 +274,9 @@ class EventProcessor
         $paused = $event->getKey('Paused');
 
         $this->logInfo('Queue member pause changed', [
-            'queue' => $queue,
+            'queue'     => $queue,
             'interface' => $interface,
-            'paused' => $paused,
+            'paused'    => $paused,
         ]);
 
         // Fire generic event for now
@@ -296,7 +295,7 @@ class EventProcessor
 
         $this->logInfo('New channel created', [
             'channel' => $channel,
-            'state' => $state,
+            'state'   => $state,
         ]);
 
         // Fire generic event
@@ -315,7 +314,7 @@ class EventProcessor
 
         $this->logInfo('Channel state changed', [
             'channel' => $channel,
-            'state' => $state,
+            'state'   => $state,
         ]);
 
         // Fire generic event
@@ -335,9 +334,9 @@ class EventProcessor
         $application = $event->getKey('Application');
 
         $this->logInfo('Extension event', [
-            'channel' => $channel,
-            'extension' => $extension,
-            'context' => $context,
+            'channel'     => $channel,
+            'extension'   => $extension,
+            'context'     => $context,
             'application' => $application,
         ]);
 
@@ -353,10 +352,10 @@ class EventProcessor
     protected function handleUserEvent(EventMessage $event): void
     {
         $userEvent = $event->getKey('UserEvent');
-        
+
         $this->logInfo('User event', [
             'user_event' => $userEvent,
-            'data' => $event->getKeys(),
+            'data'       => $event->getKeys(),
         ]);
 
         // Fire generic event
@@ -371,10 +370,10 @@ class EventProcessor
     protected function handleUnknownEvent(EventMessage $event): void
     {
         $eventName = $event->getEventName();
-        
+
         $this->logInfo("Unknown event type: {$eventName}", [
             'event' => $eventName,
-            'keys' => $event->getKeys(),
+            'keys'  => $event->getKeys(),
         ]);
 
         // Fire generic Asterisk event
@@ -384,7 +383,7 @@ class EventProcessor
     /**
      * Register a custom event handler.
      *
-     * @param string $eventName
+     * @param string   $eventName
      * @param callable $handler
      */
     public function registerCustomHandler(string $eventName, callable $handler): void
@@ -396,6 +395,7 @@ class EventProcessor
      * Check if a custom handler exists for an event.
      *
      * @param string $eventName
+     *
      * @return bool
      */
     protected function hasCustomHandler(string $eventName): bool
@@ -412,9 +412,9 @@ class EventProcessor
     {
         $eventName = $event->getEventName();
         $handler = $this->customHandlers[$eventName];
-        
+
         $this->logInfo("Processing event with custom handler: {$eventName}");
-        
+
         $handler($event);
     }
 
@@ -432,6 +432,7 @@ class EventProcessor
      * Check if an event should be processed based on filters.
      *
      * @param EventMessage $event
+     *
      * @return bool
      */
     protected function shouldProcessEvent(EventMessage $event): bool
@@ -441,7 +442,7 @@ class EventProcessor
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -461,10 +462,10 @@ class EventProcessor
     public function resetStatistics(): void
     {
         $this->statistics = [
-            'total_events' => 0,
+            'total_events'     => 0,
             'processed_events' => 0,
-            'failed_events' => 0,
-            'event_types' => [],
+            'failed_events'    => 0,
+            'event_types'      => [],
         ];
     }
 
@@ -472,7 +473,7 @@ class EventProcessor
      * Log an info message.
      *
      * @param string $message
-     * @param array $context
+     * @param array  $context
      */
     protected function logInfo(string $message, array $context = []): void
     {
@@ -486,7 +487,7 @@ class EventProcessor
      * Log an error message.
      *
      * @param string $message
-     * @param array $context
+     * @param array  $context
      */
     protected function logError(string $message, array $context = []): void
     {

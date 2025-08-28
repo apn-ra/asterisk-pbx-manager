@@ -12,13 +12,13 @@ return [
     |
     */
     'connection' => [
-        'host' => env('ASTERISK_AMI_HOST', '127.0.0.1'),
-        'port' => env('ASTERISK_AMI_PORT', 5038),
-        'username' => env('ASTERISK_AMI_USERNAME', 'admin'),
-        'secret' => env('ASTERISK_AMI_SECRET', 'your_ami_secret'),
+        'host'            => env('ASTERISK_AMI_HOST', '127.0.0.1'),
+        'port'            => env('ASTERISK_AMI_PORT', 5038),
+        'username'        => env('ASTERISK_AMI_USERNAME', 'admin'),
+        'secret'          => env('ASTERISK_AMI_SECRET', 'your_ami_secret'),
         'connect_timeout' => env('ASTERISK_AMI_CONNECT_TIMEOUT', 10),
-        'read_timeout' => env('ASTERISK_AMI_READ_TIMEOUT', 10),
-        'scheme' => env('ASTERISK_AMI_SCHEME', 'tcp://'),
+        'read_timeout'    => env('ASTERISK_AMI_READ_TIMEOUT', 10),
+        'scheme'          => env('ASTERISK_AMI_SCHEME', 'tcp://'),
     ],
 
     /*
@@ -31,8 +31,8 @@ return [
     |
     */
     'events' => [
-        'enabled' => env('ASTERISK_EVENTS_ENABLED', true),
-        'broadcast' => env('ASTERISK_EVENTS_BROADCAST', true),
+        'enabled'         => env('ASTERISK_EVENTS_ENABLED', true),
+        'broadcast'       => env('ASTERISK_EVENTS_BROADCAST', true),
         'log_to_database' => env('ASTERISK_LOG_TO_DATABASE', true),
     ],
 
@@ -45,8 +45,8 @@ return [
     |
     */
     'reconnection' => [
-        'enabled' => env('ASTERISK_RECONNECTION_ENABLED', true),
-        'max_attempts' => env('ASTERISK_RECONNECTION_MAX_ATTEMPTS', 3),
+        'enabled'       => env('ASTERISK_RECONNECTION_ENABLED', true),
+        'max_attempts'  => env('ASTERISK_RECONNECTION_MAX_ATTEMPTS', 3),
         'delay_seconds' => env('ASTERISK_RECONNECTION_DELAY', 5),
     ],
 
@@ -60,7 +60,7 @@ return [
     */
     'logging' => [
         'enabled' => env('ASTERISK_LOGGING_ENABLED', true),
-        'level' => env('ASTERISK_LOGGING_LEVEL', 'info'),
+        'level'   => env('ASTERISK_LOGGING_LEVEL', 'info'),
         'channel' => env('ASTERISK_LOGGING_CHANNEL', 'default'),
     ],
 
@@ -73,7 +73,7 @@ return [
     |
     */
     'queues' => [
-        'default_context' => env('ASTERISK_DEFAULT_CONTEXT', 'default'),
+        'default_context'  => env('ASTERISK_DEFAULT_CONTEXT', 'default'),
         'default_priority' => env('ASTERISK_DEFAULT_PRIORITY', 1),
     ],
 
@@ -86,9 +86,9 @@ return [
     |
     */
     'broadcasting' => [
-        'channel_prefix' => env('ASTERISK_BROADCAST_CHANNEL_PREFIX', 'asterisk'),
+        'channel_prefix'   => env('ASTERISK_BROADCAST_CHANNEL_PREFIX', 'asterisk'),
         'private_channels' => env('ASTERISK_BROADCAST_PRIVATE', false),
-        
+
         /*
         |--------------------------------------------------------------------------
         | Authentication Configuration
@@ -99,13 +99,13 @@ return [
         |
         */
         'authentication' => [
-            'enabled' => env('ASTERISK_BROADCAST_AUTH_ENABLED', false),
-            'guard' => env('ASTERISK_BROADCAST_AUTH_GUARD', 'web'),
-            'middleware' => env('ASTERISK_BROADCAST_AUTH_MIDDLEWARE', 'auth'),
+            'enabled'              => env('ASTERISK_BROADCAST_AUTH_ENABLED', false),
+            'guard'                => env('ASTERISK_BROADCAST_AUTH_GUARD', 'web'),
+            'middleware'           => env('ASTERISK_BROADCAST_AUTH_MIDDLEWARE', 'auth'),
             'required_permissions' => env('ASTERISK_BROADCAST_PERMISSIONS', 'asterisk.events.listen'),
-            'token_based' => env('ASTERISK_BROADCAST_TOKEN_AUTH', false),
-            'allowed_tokens' => explode(',', env('ASTERISK_BROADCAST_ALLOWED_TOKENS', '')),
-            'user_model' => env('ASTERISK_BROADCAST_USER_MODEL', 'App\\Models\\User'),
+            'token_based'          => env('ASTERISK_BROADCAST_TOKEN_AUTH', false),
+            'allowed_tokens'       => explode(',', env('ASTERISK_BROADCAST_ALLOWED_TOKENS', '')),
+            'user_model'           => env('ASTERISK_BROADCAST_USER_MODEL', 'App\\Models\\User'),
         ],
     ],
 
@@ -119,11 +119,11 @@ return [
     |
     */
     'audit' => [
-        'enabled' => env('ASTERISK_AUDIT_ENABLED', true),
+        'enabled'         => env('ASTERISK_AUDIT_ENABLED', true),
         'log_to_database' => env('ASTERISK_AUDIT_LOG_TO_DATABASE', true),
-        'log_to_file' => env('ASTERISK_AUDIT_LOG_TO_FILE', true),
-        'log_channel' => env('ASTERISK_AUDIT_LOG_CHANNEL', 'default'),
-        
+        'log_to_file'     => env('ASTERISK_AUDIT_LOG_TO_FILE', true),
+        'log_channel'     => env('ASTERISK_AUDIT_LOG_CHANNEL', 'default'),
+
         /*
         |--------------------------------------------------------------------------
         | Audit Data Retention
@@ -133,10 +133,10 @@ return [
         |
         */
         'retention' => [
-            'days' => env('ASTERISK_AUDIT_RETENTION_DAYS', 90),
+            'days'         => env('ASTERISK_AUDIT_RETENTION_DAYS', 90),
             'auto_cleanup' => env('ASTERISK_AUDIT_AUTO_CLEANUP', true),
         ],
-        
+
         /*
         |--------------------------------------------------------------------------
         | Audit Filtering
@@ -147,12 +147,12 @@ return [
         */
         'filters' => [
             'log_successful_actions' => env('ASTERISK_AUDIT_LOG_SUCCESS', true),
-            'log_failed_actions' => env('ASTERISK_AUDIT_LOG_FAILURES', true),
-            'log_connection_events' => env('ASTERISK_AUDIT_LOG_CONNECTIONS', true),
-            'excluded_actions' => explode(',', env('ASTERISK_AUDIT_EXCLUDED_ACTIONS', '')),
-            'sensitive_actions' => explode(',', env('ASTERISK_AUDIT_SENSITIVE_ACTIONS', 'login,command')),
+            'log_failed_actions'     => env('ASTERISK_AUDIT_LOG_FAILURES', true),
+            'log_connection_events'  => env('ASTERISK_AUDIT_LOG_CONNECTIONS', true),
+            'excluded_actions'       => explode(',', env('ASTERISK_AUDIT_EXCLUDED_ACTIONS', '')),
+            'sensitive_actions'      => explode(',', env('ASTERISK_AUDIT_SENSITIVE_ACTIONS', 'login,command')),
         ],
-        
+
         /*
         |--------------------------------------------------------------------------
         | Data Sanitization
@@ -162,12 +162,12 @@ return [
         |
         */
         'sanitization' => [
-            'sensitive_keys' => ['secret', 'password', 'authsecret', 'md5secret', 'token'],
-            'redaction_text' => '[REDACTED]',
-            'log_request_data' => env('ASTERISK_AUDIT_LOG_REQUEST_DATA', true),
+            'sensitive_keys'    => ['secret', 'password', 'authsecret', 'md5secret', 'token'],
+            'redaction_text'    => '[REDACTED]',
+            'log_request_data'  => env('ASTERISK_AUDIT_LOG_REQUEST_DATA', true),
             'log_response_data' => env('ASTERISK_AUDIT_LOG_RESPONSE_DATA', true),
         ],
-        
+
         /*
         |--------------------------------------------------------------------------
         | Performance Settings
@@ -177,8 +177,8 @@ return [
         |
         */
         'performance' => [
-            'async_logging' => env('ASTERISK_AUDIT_ASYNC', false),
-            'batch_size' => env('ASTERISK_AUDIT_BATCH_SIZE', 100),
+            'async_logging'    => env('ASTERISK_AUDIT_ASYNC', false),
+            'batch_size'       => env('ASTERISK_AUDIT_BATCH_SIZE', 100),
             'queue_connection' => env('ASTERISK_AUDIT_QUEUE_CONNECTION', 'default'),
         ],
     ],
@@ -201,13 +201,13 @@ return [
         | Enable or disable metrics collection and configure collection behavior.
         |
         */
-        'enabled' => env('ASTERISK_METRICS_ENABLED', true),
+        'enabled'           => env('ASTERISK_METRICS_ENABLED', true),
         'track_performance' => env('ASTERISK_METRICS_TRACK_PERFORMANCE', true),
-        'track_errors' => env('ASTERISK_METRICS_TRACK_ERRORS', true),
+        'track_errors'      => env('ASTERISK_METRICS_TRACK_ERRORS', true),
         'track_connections' => env('ASTERISK_METRICS_TRACK_CONNECTIONS', true),
-        'track_actions' => env('ASTERISK_METRICS_TRACK_ACTIONS', true),
-        'track_events' => env('ASTERISK_METRICS_TRACK_EVENTS', true),
-        
+        'track_actions'     => env('ASTERISK_METRICS_TRACK_ACTIONS', true),
+        'track_events'      => env('ASTERISK_METRICS_TRACK_EVENTS', true),
+
         /*
         |--------------------------------------------------------------------------
         | Metrics Storage
@@ -217,12 +217,12 @@ return [
         |
         */
         'storage' => [
-            'cache_driver' => env('ASTERISK_METRICS_CACHE_DRIVER', 'default'),
-            'retention_hours' => env('ASTERISK_METRICS_RETENTION_HOURS', 24),
+            'cache_driver'     => env('ASTERISK_METRICS_CACHE_DRIVER', 'default'),
+            'retention_hours'  => env('ASTERISK_METRICS_RETENTION_HOURS', 24),
             'cleanup_interval' => env('ASTERISK_METRICS_CLEANUP_INTERVAL', 60), // minutes
-            'batch_size' => env('ASTERISK_METRICS_BATCH_SIZE', 1000),
+            'batch_size'       => env('ASTERISK_METRICS_BATCH_SIZE', 1000),
         ],
-        
+
         /*
         |--------------------------------------------------------------------------
         | Performance Settings
@@ -232,12 +232,12 @@ return [
         |
         */
         'performance' => [
-            'async_collection' => env('ASTERISK_METRICS_ASYNC', false),
-            'sampling_rate' => env('ASTERISK_METRICS_SAMPLING_RATE', 1.0), // 0.0 to 1.0
+            'async_collection'   => env('ASTERISK_METRICS_ASYNC', false),
+            'sampling_rate'      => env('ASTERISK_METRICS_SAMPLING_RATE', 1.0), // 0.0 to 1.0
             'aggregation_window' => env('ASTERISK_METRICS_AGGREGATION_WINDOW', 300), // seconds
-            'max_memory_usage' => env('ASTERISK_METRICS_MAX_MEMORY_MB', 128),
+            'max_memory_usage'   => env('ASTERISK_METRICS_MAX_MEMORY_MB', 128),
         ],
-        
+
         /*
         |--------------------------------------------------------------------------
         | Reporting Configuration
@@ -247,13 +247,13 @@ return [
         |
         */
         'reporting' => [
-            'enabled' => env('ASTERISK_METRICS_REPORTING_ENABLED', true),
-            'export_formats' => explode(',', env('ASTERISK_METRICS_EXPORT_FORMATS', 'json,prometheus')),
-            'auto_reports' => env('ASTERISK_METRICS_AUTO_REPORTS', false),
+            'enabled'         => env('ASTERISK_METRICS_REPORTING_ENABLED', true),
+            'export_formats'  => explode(',', env('ASTERISK_METRICS_EXPORT_FORMATS', 'json,prometheus')),
+            'auto_reports'    => env('ASTERISK_METRICS_AUTO_REPORTS', false),
             'report_schedule' => env('ASTERISK_METRICS_REPORT_SCHEDULE', 'hourly'),
-            'export_path' => env('ASTERISK_METRICS_EXPORT_PATH', storage_path('app/metrics')),
+            'export_path'     => env('ASTERISK_METRICS_EXPORT_PATH', storage_path('app/metrics')),
         ],
-        
+
         /*
         |--------------------------------------------------------------------------
         | Alerting Configuration
@@ -263,11 +263,11 @@ return [
         |
         */
         'alerting' => [
-            'enabled' => env('ASTERISK_METRICS_ALERTING_ENABLED', false),
-            'error_rate_threshold' => env('ASTERISK_METRICS_ERROR_RATE_THRESHOLD', 5.0), // percentage
-            'response_time_threshold' => env('ASTERISK_METRICS_RESPONSE_TIME_THRESHOLD', 1000), // milliseconds
+            'enabled'                      => env('ASTERISK_METRICS_ALERTING_ENABLED', false),
+            'error_rate_threshold'         => env('ASTERISK_METRICS_ERROR_RATE_THRESHOLD', 5.0), // percentage
+            'response_time_threshold'      => env('ASTERISK_METRICS_RESPONSE_TIME_THRESHOLD', 1000), // milliseconds
             'connection_failure_threshold' => env('ASTERISK_METRICS_CONNECTION_FAILURE_THRESHOLD', 3),
-            'notification_channels' => explode(',', env('ASTERISK_METRICS_NOTIFICATION_CHANNELS', 'log')),
+            'notification_channels'        => explode(',', env('ASTERISK_METRICS_NOTIFICATION_CHANNELS', 'log')),
         ],
     ],
 
@@ -289,9 +289,9 @@ return [
         | Maximum time (in seconds) to wait for graceful shutdown to complete.
         |
         */
-        'timeout' => env('ASTERISK_SHUTDOWN_TIMEOUT', 30),
+        'timeout'            => env('ASTERISK_SHUTDOWN_TIMEOUT', 30),
         'connection_timeout' => env('ASTERISK_SHUTDOWN_CONNECTION_TIMEOUT', 10),
-        
+
         /*
         |--------------------------------------------------------------------------
         | Signal Handling
@@ -301,12 +301,12 @@ return [
         |
         */
         'signals' => [
-            'enabled' => env('ASTERISK_SHUTDOWN_SIGNALS_ENABLED', true),
+            'enabled'        => env('ASTERISK_SHUTDOWN_SIGNALS_ENABLED', true),
             'handle_sigterm' => env('ASTERISK_SHUTDOWN_HANDLE_SIGTERM', true),
-            'handle_sigint' => env('ASTERISK_SHUTDOWN_HANDLE_SIGINT', true),
-            'handle_sighup' => env('ASTERISK_SHUTDOWN_HANDLE_SIGHUP', true),
+            'handle_sigint'  => env('ASTERISK_SHUTDOWN_HANDLE_SIGINT', true),
+            'handle_sighup'  => env('ASTERISK_SHUTDOWN_HANDLE_SIGHUP', true),
         ],
-        
+
         /*
         |--------------------------------------------------------------------------
         | Cleanup Configuration
@@ -316,12 +316,12 @@ return [
         |
         */
         'cleanup' => [
-            'close_connections' => env('ASTERISK_SHUTDOWN_CLOSE_CONNECTIONS', true),
-            'flush_logs' => env('ASTERISK_SHUTDOWN_FLUSH_LOGS', true),
-            'clear_cache' => env('ASTERISK_SHUTDOWN_CLEAR_CACHE', false),
+            'close_connections'      => env('ASTERISK_SHUTDOWN_CLOSE_CONNECTIONS', true),
+            'flush_logs'             => env('ASTERISK_SHUTDOWN_FLUSH_LOGS', true),
+            'clear_cache'            => env('ASTERISK_SHUTDOWN_CLEAR_CACHE', false),
             'run_garbage_collection' => env('ASTERISK_SHUTDOWN_RUN_GC', true),
         ],
-        
+
         /*
         |--------------------------------------------------------------------------
         | Logging Configuration
@@ -331,8 +331,8 @@ return [
         |
         */
         'logging' => [
-            'log_shutdown_start' => env('ASTERISK_SHUTDOWN_LOG_START', true),
-            'log_shutdown_complete' => env('ASTERISK_SHUTDOWN_LOG_COMPLETE', true),
+            'log_shutdown_start'     => env('ASTERISK_SHUTDOWN_LOG_START', true),
+            'log_shutdown_complete'  => env('ASTERISK_SHUTDOWN_LOG_COMPLETE', true),
             'log_connection_cleanup' => env('ASTERISK_SHUTDOWN_LOG_CONNECTIONS', true),
             'log_callback_execution' => env('ASTERISK_SHUTDOWN_LOG_CALLBACKS', true),
         ],
@@ -357,7 +357,7 @@ return [
         |
         */
         'enabled' => env('ASTERISK_CIRCUIT_BREAKER_ENABLED', true),
-        
+
         /*
         |--------------------------------------------------------------------------
         | Failure Threshold
@@ -367,7 +367,7 @@ return [
         |
         */
         'failure_threshold' => env('ASTERISK_CIRCUIT_BREAKER_FAILURE_THRESHOLD', 5),
-        
+
         /*
         |--------------------------------------------------------------------------
         | Recovery Timeout
@@ -377,7 +377,7 @@ return [
         |
         */
         'recovery_timeout' => env('ASTERISK_CIRCUIT_BREAKER_RECOVERY_TIMEOUT', 60),
-        
+
         /*
         |--------------------------------------------------------------------------
         | Success Threshold
@@ -387,7 +387,7 @@ return [
         |
         */
         'success_threshold' => env('ASTERISK_CIRCUIT_BREAKER_SUCCESS_THRESHOLD', 3),
-        
+
         /*
         |--------------------------------------------------------------------------
         | Operation Timeout
@@ -397,7 +397,7 @@ return [
         |
         */
         'timeout' => env('ASTERISK_CIRCUIT_BREAKER_TIMEOUT', 30),
-        
+
         /*
         |--------------------------------------------------------------------------
         | Monitor Window
@@ -407,7 +407,7 @@ return [
         |
         */
         'monitor_window' => env('ASTERISK_CIRCUIT_BREAKER_MONITOR_WINDOW', 300),
-        
+
         /*
         |--------------------------------------------------------------------------
         | Circuit Configuration
@@ -419,21 +419,21 @@ return [
         'circuits' => [
             'ami_connection' => [
                 'failure_threshold' => env('ASTERISK_CB_AMI_CONNECTION_FAILURE_THRESHOLD', 3),
-                'recovery_timeout' => env('ASTERISK_CB_AMI_CONNECTION_RECOVERY_TIMEOUT', 30),
-                'timeout' => env('ASTERISK_CB_AMI_CONNECTION_TIMEOUT', 10),
+                'recovery_timeout'  => env('ASTERISK_CB_AMI_CONNECTION_RECOVERY_TIMEOUT', 30),
+                'timeout'           => env('ASTERISK_CB_AMI_CONNECTION_TIMEOUT', 10),
             ],
             'ami_actions' => [
                 'failure_threshold' => env('ASTERISK_CB_AMI_ACTIONS_FAILURE_THRESHOLD', 5),
-                'recovery_timeout' => env('ASTERISK_CB_AMI_ACTIONS_RECOVERY_TIMEOUT', 60),
-                'timeout' => env('ASTERISK_CB_AMI_ACTIONS_TIMEOUT', 30),
+                'recovery_timeout'  => env('ASTERISK_CB_AMI_ACTIONS_RECOVERY_TIMEOUT', 60),
+                'timeout'           => env('ASTERISK_CB_AMI_ACTIONS_TIMEOUT', 30),
             ],
             'event_processing' => [
                 'failure_threshold' => env('ASTERISK_CB_EVENT_PROCESSING_FAILURE_THRESHOLD', 10),
-                'recovery_timeout' => env('ASTERISK_CB_EVENT_PROCESSING_RECOVERY_TIMEOUT', 120),
-                'timeout' => env('ASTERISK_CB_EVENT_PROCESSING_TIMEOUT', 15),
+                'recovery_timeout'  => env('ASTERISK_CB_EVENT_PROCESSING_RECOVERY_TIMEOUT', 120),
+                'timeout'           => env('ASTERISK_CB_EVENT_PROCESSING_TIMEOUT', 15),
             ],
         ],
-        
+
         /*
         |--------------------------------------------------------------------------
         | Fallback Configuration
@@ -443,11 +443,11 @@ return [
         |
         */
         'fallbacks' => [
-            'ami_connection' => env('ASTERISK_CB_AMI_CONNECTION_FALLBACK', 'cache'),
-            'ami_actions' => env('ASTERISK_CB_AMI_ACTIONS_FALLBACK', 'queue'),
+            'ami_connection'   => env('ASTERISK_CB_AMI_CONNECTION_FALLBACK', 'cache'),
+            'ami_actions'      => env('ASTERISK_CB_AMI_ACTIONS_FALLBACK', 'queue'),
             'event_processing' => env('ASTERISK_CB_EVENT_PROCESSING_FALLBACK', 'skip'),
         ],
-        
+
         /*
         |--------------------------------------------------------------------------
         | Monitoring and Alerting
@@ -457,11 +457,11 @@ return [
         |
         */
         'monitoring' => [
-            'log_state_changes' => env('ASTERISK_CB_LOG_STATE_CHANGES', true),
-            'log_failures' => env('ASTERISK_CB_LOG_FAILURES', true),
-            'log_recoveries' => env('ASTERISK_CB_LOG_RECOVERIES', true),
-            'alert_on_open' => env('ASTERISK_CB_ALERT_ON_OPEN', true),
-            'alert_on_recovery' => env('ASTERISK_CB_ALERT_ON_RECOVERY', true),
+            'log_state_changes'     => env('ASTERISK_CB_LOG_STATE_CHANGES', true),
+            'log_failures'          => env('ASTERISK_CB_LOG_FAILURES', true),
+            'log_recoveries'        => env('ASTERISK_CB_LOG_RECOVERIES', true),
+            'alert_on_open'         => env('ASTERISK_CB_ALERT_ON_OPEN', true),
+            'alert_on_recovery'     => env('ASTERISK_CB_ALERT_ON_RECOVERY', true),
             'notification_channels' => explode(',', env('ASTERISK_CB_NOTIFICATION_CHANNELS', 'log,email')),
         ],
     ],
@@ -485,11 +485,11 @@ return [
         |
         */
         'endpoints' => [
-            'enabled' => env('ASTERISK_HEALTH_ENDPOINTS_ENABLED', true),
-            'detailed_endpoint' => env('ASTERISK_HEALTH_DETAILED_ENABLED', true),
-            'simple_endpoint' => env('ASTERISK_HEALTH_SIMPLE_ENABLED', true),
-            'status_endpoint' => env('ASTERISK_HEALTH_STATUS_ENABLED', true),
-            'liveness_endpoint' => env('ASTERISK_HEALTH_LIVENESS_ENABLED', true),
+            'enabled'            => env('ASTERISK_HEALTH_ENDPOINTS_ENABLED', true),
+            'detailed_endpoint'  => env('ASTERISK_HEALTH_DETAILED_ENABLED', true),
+            'simple_endpoint'    => env('ASTERISK_HEALTH_SIMPLE_ENABLED', true),
+            'status_endpoint'    => env('ASTERISK_HEALTH_STATUS_ENABLED', true),
+            'liveness_endpoint'  => env('ASTERISK_HEALTH_LIVENESS_ENABLED', true),
             'readiness_endpoint' => env('ASTERISK_HEALTH_READINESS_ENABLED', true),
         ],
 
@@ -503,11 +503,11 @@ return [
         |
         */
         'cache' => [
-            'enabled' => env('ASTERISK_HEALTH_CACHE_ENABLED', true),
-            'ttl' => env('ASTERISK_HEALTH_CACHE_TTL', 30), // seconds
-            'simple_ttl' => env('ASTERISK_HEALTH_SIMPLE_CACHE_TTL', 10), // seconds
+            'enabled'          => env('ASTERISK_HEALTH_CACHE_ENABLED', true),
+            'ttl'              => env('ASTERISK_HEALTH_CACHE_TTL', 30), // seconds
+            'simple_ttl'       => env('ASTERISK_HEALTH_SIMPLE_CACHE_TTL', 10), // seconds
             'cache_key_prefix' => env('ASTERISK_HEALTH_CACHE_PREFIX', 'asterisk_health'),
-            'cache_driver' => env('ASTERISK_HEALTH_CACHE_DRIVER', null), // null uses default
+            'cache_driver'     => env('ASTERISK_HEALTH_CACHE_DRIVER', null), // null uses default
         ],
 
         /*
@@ -519,11 +519,11 @@ return [
         |
         */
         'thresholds' => [
-            'connection_timeout' => env('ASTERISK_HEALTH_CONNECTION_TIMEOUT', 5), // seconds
-            'database_query_timeout' => env('ASTERISK_HEALTH_DB_TIMEOUT', 2), // seconds
-            'max_memory_usage_mb' => env('ASTERISK_HEALTH_MAX_MEMORY_MB', 256),
-            'max_execution_time_ms' => env('ASTERISK_HEALTH_MAX_EXECUTION_MS', 1000),
-            'event_age_warning_minutes' => env('ASTERISK_HEALTH_EVENT_AGE_WARNING', 60),
+            'connection_timeout'         => env('ASTERISK_HEALTH_CONNECTION_TIMEOUT', 5), // seconds
+            'database_query_timeout'     => env('ASTERISK_HEALTH_DB_TIMEOUT', 2), // seconds
+            'max_memory_usage_mb'        => env('ASTERISK_HEALTH_MAX_MEMORY_MB', 256),
+            'max_execution_time_ms'      => env('ASTERISK_HEALTH_MAX_EXECUTION_MS', 1000),
+            'event_age_warning_minutes'  => env('ASTERISK_HEALTH_EVENT_AGE_WARNING', 60),
             'min_recent_events_per_hour' => env('ASTERISK_HEALTH_MIN_EVENTS_PER_HOUR', 0),
         ],
 
@@ -536,12 +536,12 @@ return [
         |
         */
         'monitoring' => [
-            'check_ami_connection' => env('ASTERISK_HEALTH_CHECK_AMI', true),
-            'check_database' => env('ASTERISK_HEALTH_CHECK_DATABASE', true),
-            'check_configuration' => env('ASTERISK_HEALTH_CHECK_CONFIG', true),
-            'check_event_processing' => env('ASTERISK_HEALTH_CHECK_EVENTS', true),
-            'check_system_metrics' => env('ASTERISK_HEALTH_CHECK_METRICS', true),
-            'check_queues' => env('ASTERISK_HEALTH_CHECK_QUEUES', true),
+            'check_ami_connection'        => env('ASTERISK_HEALTH_CHECK_AMI', true),
+            'check_database'              => env('ASTERISK_HEALTH_CHECK_DATABASE', true),
+            'check_configuration'         => env('ASTERISK_HEALTH_CHECK_CONFIG', true),
+            'check_event_processing'      => env('ASTERISK_HEALTH_CHECK_EVENTS', true),
+            'check_system_metrics'        => env('ASTERISK_HEALTH_CHECK_METRICS', true),
+            'check_queues'                => env('ASTERISK_HEALTH_CHECK_QUEUES', true),
             'include_performance_metrics' => env('ASTERISK_HEALTH_INCLUDE_METRICS', true),
         ],
 
@@ -555,12 +555,12 @@ return [
         |
         */
         'critical_checks' => [
-            'ami_connection' => env('ASTERISK_HEALTH_CRITICAL_AMI', true),
-            'database' => env('ASTERISK_HEALTH_CRITICAL_DATABASE', true),
-            'configuration' => env('ASTERISK_HEALTH_CRITICAL_CONFIG', true),
+            'ami_connection'   => env('ASTERISK_HEALTH_CRITICAL_AMI', true),
+            'database'         => env('ASTERISK_HEALTH_CRITICAL_DATABASE', true),
+            'configuration'    => env('ASTERISK_HEALTH_CRITICAL_CONFIG', true),
             'event_processing' => env('ASTERISK_HEALTH_CRITICAL_EVENTS', false),
-            'system_metrics' => env('ASTERISK_HEALTH_CRITICAL_METRICS', false),
-            'queues' => env('ASTERISK_HEALTH_CRITICAL_QUEUES', false),
+            'system_metrics'   => env('ASTERISK_HEALTH_CRITICAL_METRICS', false),
+            'queues'           => env('ASTERISK_HEALTH_CRITICAL_QUEUES', false),
         ],
 
         /*
@@ -572,12 +572,12 @@ return [
         |
         */
         'response' => [
-            'include_version' => env('ASTERISK_HEALTH_INCLUDE_VERSION', true),
-            'include_timestamp' => env('ASTERISK_HEALTH_INCLUDE_TIMESTAMP', true),
+            'include_version'        => env('ASTERISK_HEALTH_INCLUDE_VERSION', true),
+            'include_timestamp'      => env('ASTERISK_HEALTH_INCLUDE_TIMESTAMP', true),
             'include_execution_time' => env('ASTERISK_HEALTH_INCLUDE_EXECUTION_TIME', true),
-            'include_system_info' => env('ASTERISK_HEALTH_INCLUDE_SYSTEM_INFO', true),
-            'mask_sensitive_data' => env('ASTERISK_HEALTH_MASK_SENSITIVE', true),
-            'compact_mode' => env('ASTERISK_HEALTH_COMPACT_MODE', false),
+            'include_system_info'    => env('ASTERISK_HEALTH_INCLUDE_SYSTEM_INFO', true),
+            'mask_sensitive_data'    => env('ASTERISK_HEALTH_MASK_SENSITIVE', true),
+            'compact_mode'           => env('ASTERISK_HEALTH_COMPACT_MODE', false),
         ],
 
         /*
@@ -590,9 +590,9 @@ return [
         */
         'security' => [
             'require_auth' => env('ASTERISK_HEALTH_REQUIRE_AUTH', false),
-            'allowed_ips' => explode(',', env('ASTERISK_HEALTH_ALLOWED_IPS', '')),
-            'rate_limit' => env('ASTERISK_HEALTH_RATE_LIMIT', 60), // requests per minute
-            'hide_errors' => env('ASTERISK_HEALTH_HIDE_ERRORS', false),
+            'allowed_ips'  => explode(',', env('ASTERISK_HEALTH_ALLOWED_IPS', '')),
+            'rate_limit'   => env('ASTERISK_HEALTH_RATE_LIMIT', 60), // requests per minute
+            'hide_errors'  => env('ASTERISK_HEALTH_HIDE_ERRORS', false),
         ],
 
         /*
@@ -604,12 +604,12 @@ return [
         |
         */
         'integration' => [
-            'prometheus_metrics' => env('ASTERISK_HEALTH_PROMETHEUS', false),
-            'datadog_integration' => env('ASTERISK_HEALTH_DATADOG', false),
+            'prometheus_metrics'   => env('ASTERISK_HEALTH_PROMETHEUS', false),
+            'datadog_integration'  => env('ASTERISK_HEALTH_DATADOG', false),
             'newrelic_integration' => env('ASTERISK_HEALTH_NEWRELIC', false),
-            'custom_webhook' => env('ASTERISK_HEALTH_WEBHOOK_URL', null),
-            'slack_notifications' => env('ASTERISK_HEALTH_SLACK_ENABLED', false),
-            'email_alerts' => env('ASTERISK_HEALTH_EMAIL_ALERTS', false),
+            'custom_webhook'       => env('ASTERISK_HEALTH_WEBHOOK_URL', null),
+            'slack_notifications'  => env('ASTERISK_HEALTH_SLACK_ENABLED', false),
+            'email_alerts'         => env('ASTERISK_HEALTH_EMAIL_ALERTS', false),
         ],
     ],
 
@@ -655,8 +655,8 @@ return [
         |
         */
         'connection_timeout' => env('ASTERISK_POOL_CONNECTION_TIMEOUT', 10), // seconds
-        'acquire_timeout' => env('ASTERISK_POOL_ACQUIRE_TIMEOUT', 5), // seconds
-        'idle_timeout' => env('ASTERISK_POOL_IDLE_TIMEOUT', 300), // 5 minutes
+        'acquire_timeout'    => env('ASTERISK_POOL_ACQUIRE_TIMEOUT', 5), // seconds
+        'idle_timeout'       => env('ASTERISK_POOL_IDLE_TIMEOUT', 300), // 5 minutes
 
         /*
         |--------------------------------------------------------------------------
@@ -666,8 +666,8 @@ return [
         | Configure connection lifecycle and recycling behavior.
         |
         */
-        'max_connection_age' => env('ASTERISK_POOL_MAX_CONNECTION_AGE', 3600), // 1 hour
-        'max_idle_time' => env('ASTERISK_POOL_MAX_IDLE_TIME', 300), // 5 minutes
+        'max_connection_age'          => env('ASTERISK_POOL_MAX_CONNECTION_AGE', 3600), // 1 hour
+        'max_idle_time'               => env('ASTERISK_POOL_MAX_IDLE_TIME', 300), // 5 minutes
         'max_requests_per_connection' => env('ASTERISK_POOL_MAX_REQUESTS_PER_CONNECTION', 1000),
         'enable_connection_recycling' => env('ASTERISK_POOL_ENABLE_RECYCLING', true),
 
@@ -679,8 +679,8 @@ return [
         | Configure health monitoring for pooled connections.
         |
         */
-        'enable_health_monitoring' => env('ASTERISK_POOL_ENABLE_HEALTH_MONITORING', true),
-        'health_check_interval' => env('ASTERISK_POOL_HEALTH_CHECK_INTERVAL', 60), // seconds
+        'enable_health_monitoring'  => env('ASTERISK_POOL_ENABLE_HEALTH_MONITORING', true),
+        'health_check_interval'     => env('ASTERISK_POOL_HEALTH_CHECK_INTERVAL', 60), // seconds
         'max_health_check_failures' => env('ASTERISK_POOL_MAX_HEALTH_CHECK_FAILURES', 3),
 
         /*
@@ -691,9 +691,9 @@ return [
         | Configure automatic pool maintenance and cleanup.
         |
         */
-        'cleanup_interval' => env('ASTERISK_POOL_CLEANUP_INTERVAL', 300), // 5 minutes
+        'cleanup_interval'         => env('ASTERISK_POOL_CLEANUP_INTERVAL', 300), // 5 minutes
         'enable_automatic_cleanup' => env('ASTERISK_POOL_ENABLE_AUTO_CLEANUP', true),
-        'warmup_on_startup' => env('ASTERISK_POOL_WARMUP_ON_STARTUP', true),
+        'warmup_on_startup'        => env('ASTERISK_POOL_WARMUP_ON_STARTUP', true),
 
         /*
         |--------------------------------------------------------------------------
@@ -703,9 +703,9 @@ return [
         | Configure statistics collection and monitoring for the connection pool.
         |
         */
-        'enable_statistics' => env('ASTERISK_POOL_ENABLE_STATISTICS', true),
-        'statistics_cache_ttl' => env('ASTERISK_POOL_STATS_CACHE_TTL', 60), // seconds
-        'log_pool_events' => env('ASTERISK_POOL_LOG_EVENTS', true),
+        'enable_statistics'        => env('ASTERISK_POOL_ENABLE_STATISTICS', true),
+        'statistics_cache_ttl'     => env('ASTERISK_POOL_STATS_CACHE_TTL', 60), // seconds
+        'log_pool_events'          => env('ASTERISK_POOL_LOG_EVENTS', true),
         'log_connection_lifecycle' => env('ASTERISK_POOL_LOG_CONNECTION_LIFECYCLE', false),
 
         /*
@@ -727,12 +727,12 @@ return [
         | Configure error handling behavior for the connection pool.
         |
         */
-        'retry_failed_connections' => env('ASTERISK_POOL_RETRY_FAILED', true),
-        'max_retry_attempts' => env('ASTERISK_POOL_MAX_RETRY_ATTEMPTS', 3),
-        'retry_delay' => env('ASTERISK_POOL_RETRY_DELAY', 1), // seconds
-        'circuit_breaker_enabled' => env('ASTERISK_POOL_CIRCUIT_BREAKER', false),
+        'retry_failed_connections'          => env('ASTERISK_POOL_RETRY_FAILED', true),
+        'max_retry_attempts'                => env('ASTERISK_POOL_MAX_RETRY_ATTEMPTS', 3),
+        'retry_delay'                       => env('ASTERISK_POOL_RETRY_DELAY', 1), // seconds
+        'circuit_breaker_enabled'           => env('ASTERISK_POOL_CIRCUIT_BREAKER', false),
         'circuit_breaker_failure_threshold' => env('ASTERISK_POOL_CB_FAILURE_THRESHOLD', 10),
-        'circuit_breaker_reset_timeout' => env('ASTERISK_POOL_CB_RESET_TIMEOUT', 60), // seconds
+        'circuit_breaker_reset_timeout'     => env('ASTERISK_POOL_CB_RESET_TIMEOUT', 60), // seconds
 
         /*
         |--------------------------------------------------------------------------
@@ -742,10 +742,10 @@ return [
         | Configure performance-related settings for the connection pool.
         |
         */
-        'connection_validation' => env('ASTERISK_POOL_CONNECTION_VALIDATION', true),
-        'validate_on_acquire' => env('ASTERISK_POOL_VALIDATE_ON_ACQUIRE', true),
-        'validate_on_release' => env('ASTERISK_POOL_VALIDATE_ON_RELEASE', false),
-        'eviction_policy' => env('ASTERISK_POOL_EVICTION_POLICY', 'lru'), // lru, fifo, random
+        'connection_validation'          => env('ASTERISK_POOL_CONNECTION_VALIDATION', true),
+        'validate_on_acquire'            => env('ASTERISK_POOL_VALIDATE_ON_ACQUIRE', true),
+        'validate_on_release'            => env('ASTERISK_POOL_VALIDATE_ON_RELEASE', false),
+        'eviction_policy'                => env('ASTERISK_POOL_EVICTION_POLICY', 'lru'), // lru, fifo, random
         'preemptive_connection_creation' => env('ASTERISK_POOL_PREEMPTIVE_CREATION', false),
 
         /*
@@ -756,11 +756,11 @@ return [
         | Configure debug and development features for the connection pool.
         |
         */
-        'debug_mode' => env('ASTERISK_POOL_DEBUG', false),
-        'detailed_logging' => env('ASTERISK_POOL_DETAILED_LOGGING', false),
+        'debug_mode'             => env('ASTERISK_POOL_DEBUG', false),
+        'detailed_logging'       => env('ASTERISK_POOL_DETAILED_LOGGING', false),
         'track_connection_usage' => env('ASTERISK_POOL_TRACK_USAGE', true),
-        'export_metrics' => env('ASTERISK_POOL_EXPORT_METRICS', false),
-        'metrics_endpoint' => env('ASTERISK_POOL_METRICS_ENDPOINT', '/metrics/pool'),
+        'export_metrics'         => env('ASTERISK_POOL_EXPORT_METRICS', false),
+        'metrics_endpoint'       => env('ASTERISK_POOL_METRICS_ENDPOINT', '/metrics/pool'),
     ],
 
     /*

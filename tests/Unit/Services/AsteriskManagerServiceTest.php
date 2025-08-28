@@ -2,17 +2,15 @@
 
 namespace AsteriskPbxManager\Tests\Unit\Services;
 
-use AsteriskPbxManager\Tests\Unit\UnitTestCase;
-use AsteriskPbxManager\Services\AsteriskManagerService;
-use AsteriskPbxManager\Exceptions\AsteriskConnectionException;
 use AsteriskPbxManager\Exceptions\ActionExecutionException;
-use PAMI\Client\Impl\ClientImpl;
-use PAMI\Message\Action\OriginateAction;
-use PAMI\Message\Action\HangupAction;
-use PAMI\Message\Action\CoreStatusAction;
-use PAMI\Message\Response\ResponseMessage;
-use Mockery;
+use AsteriskPbxManager\Exceptions\AsteriskConnectionException;
+use AsteriskPbxManager\Services\AsteriskManagerService;
+use AsteriskPbxManager\Tests\Unit\UnitTestCase;
 use Illuminate\Support\Facades\Log;
+use Mockery;
+use PAMI\Message\Action\CoreStatusAction;
+use PAMI\Message\Action\HangupAction;
+use PAMI\Message\Action\OriginateAction;
 
 class AsteriskManagerServiceTest extends UnitTestCase
 {
@@ -22,7 +20,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->mockClient = $this->createMockPamiClient();
         $this->service = new AsteriskManagerService($this->mockClient);
     }
@@ -31,7 +29,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
     {
         $client = $this->createMockPamiClient();
         $service = new AsteriskManagerService($client);
-        
+
         $this->assertInstanceOf(AsteriskManagerService::class, $service);
     }
 
@@ -41,7 +39,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
             ->shouldReceive('open')
             ->once()
             ->andReturn(true);
-            
+
         $this->mockClient
             ->shouldReceive('registerEventListener')
             ->once()
@@ -52,7 +50,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
             ->with('Connected to Asterisk Manager Interface', Mockery::any());
 
         $result = $this->service->connect();
-        
+
         $this->assertTrue($result);
     }
 
@@ -69,7 +67,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
 
         $this->expectException(AsteriskConnectionException::class);
         $this->expectExceptionMessage('Connection failed');
-        
+
         $this->service->connect();
     }
 
@@ -85,7 +83,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
             ->with('Disconnected from Asterisk Manager Interface', Mockery::any());
 
         $result = $this->service->disconnect();
-        
+
         $this->assertTrue($result);
     }
 
@@ -101,7 +99,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
             ->with('Failed to disconnect from Asterisk: Disconnect failed', Mockery::any());
 
         $result = $this->service->disconnect();
-        
+
         $this->assertFalse($result);
     }
 
@@ -113,7 +111,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
             ->andReturn(true);
 
         $result = $this->service->isConnected();
-        
+
         $this->assertTrue($result);
     }
 
@@ -125,7 +123,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
             ->andReturn(false);
 
         $result = $this->service->isConnected();
-        
+
         $this->assertFalse($result);
     }
 
@@ -158,7 +156,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
         Log::shouldReceive('info')->twice();
 
         $result = $this->service->reconnect();
-        
+
         $this->assertTrue($result);
     }
 
@@ -174,7 +172,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
             ->with('Already connected to Asterisk Manager Interface', Mockery::any());
 
         $result = $this->service->reconnect();
-        
+
         $this->assertTrue($result);
     }
 
@@ -194,7 +192,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
             ->with('AMI action sent successfully', Mockery::any());
 
         $result = $this->service->send($mockAction);
-        
+
         $this->assertSame($mockResponse, $result);
     }
 
@@ -214,7 +212,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
 
         $this->expectException(ActionExecutionException::class);
         $this->expectExceptionMessage('Send failed');
-        
+
         $this->service->send($mockAction);
     }
 
@@ -237,7 +235,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
             ->with('Call originated successfully', Mockery::any());
 
         $result = $this->service->originateCall('SIP/1001', '2002', 'default', 1, 30);
-        
+
         $this->assertTrue($result);
     }
 
@@ -260,7 +258,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
             ->with('Failed to originate call', Mockery::any());
 
         $result = $this->service->originateCall('SIP/1001', '2002', 'default', 1, 30);
-        
+
         $this->assertFalse($result);
     }
 
@@ -268,7 +266,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Parameter channel cannot be empty');
-        
+
         $this->service->originateCall('', '2002', 'default', 1, 30);
     }
 
@@ -285,7 +283,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
         Log::shouldReceive('info')->twice();
 
         $result = $this->service->hangupCall('SIP/1001-12345');
-        
+
         $this->assertTrue($result);
     }
 
@@ -308,7 +306,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
             ->with('Failed to hangup call', Mockery::any());
 
         $result = $this->service->hangupCall('SIP/1001-12345');
-        
+
         $this->assertFalse($result);
     }
 
@@ -316,7 +314,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Parameter channel cannot be empty');
-        
+
         $this->service->hangupCall('');
     }
 
@@ -324,8 +322,8 @@ class AsteriskManagerServiceTest extends UnitTestCase
     {
         $mockResponse = $this->createMockResponse(true, 'Success', [
             'CoreCurrentCalls' => '5',
-            'CoreMaxCalls' => '100',
-            'CoreReloadTime' => '2024-08-28 07:38:00'
+            'CoreMaxCalls'     => '100',
+            'CoreReloadTime'   => '2024-08-28 07:38:00',
         ]);
 
         $this->mockClient
@@ -337,7 +335,7 @@ class AsteriskManagerServiceTest extends UnitTestCase
         Log::shouldReceive('info')->twice();
 
         $result = $this->service->getStatus();
-        
+
         $this->assertIsArray($result);
         $this->assertArrayHasKey('current_calls', $result);
         $this->assertArrayHasKey('max_calls', $result);
@@ -366,23 +364,21 @@ class AsteriskManagerServiceTest extends UnitTestCase
             ->with('Failed to get system status', Mockery::any());
 
         $result = $this->service->getStatus();
-        
+
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
 
     public function testAddEventListener()
     {
-        $listener = function($event) {
+        $listener = function ($event) {
             // Test listener
         };
 
         $result = $this->service->addEventListener($listener);
-        
+
         $this->assertSame($this->service, $result);
     }
-
-
 
     public function testDestructor()
     {

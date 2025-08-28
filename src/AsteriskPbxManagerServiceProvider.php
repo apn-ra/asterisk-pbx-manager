@@ -2,27 +2,26 @@
 
 namespace AsteriskPbxManager;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Log;
-use PAMI\Client\Impl\ClientImpl;
-use AsteriskPbxManager\Services\AsteriskManagerService;
-use AsteriskPbxManager\Services\EventProcessor;
-use AsteriskPbxManager\Services\ActionExecutor;
-use AsteriskPbxManager\Services\ConfigurationValidator;
-use AsteriskPbxManager\Services\AmiInputSanitizer;
-use AsteriskPbxManager\Services\BroadcastAuthService;
-use AsteriskPbxManager\Services\AuditLoggingService;
-use AsteriskPbxManager\Services\HealthCheckService;
-use AsteriskPbxManager\Services\QueueManagerService;
-use AsteriskPbxManager\Services\ChannelManagerService;
-use AsteriskPbxManager\Services\ConnectionPoolManager;
 use AsteriskPbxManager\Commands\AsteriskStatus;
 use AsteriskPbxManager\Commands\MonitorEvents;
-use AsteriskPbxManager\Listeners\LogCallEvent;
-use AsteriskPbxManager\Listeners\BroadcastCallStatus;
 use AsteriskPbxManager\Events\CallConnected;
 use AsteriskPbxManager\Events\CallEnded;
 use AsteriskPbxManager\Events\QueueMemberAdded;
+use AsteriskPbxManager\Listeners\BroadcastCallStatus;
+use AsteriskPbxManager\Listeners\LogCallEvent;
+use AsteriskPbxManager\Services\ActionExecutor;
+use AsteriskPbxManager\Services\AmiInputSanitizer;
+use AsteriskPbxManager\Services\AsteriskManagerService;
+use AsteriskPbxManager\Services\AuditLoggingService;
+use AsteriskPbxManager\Services\BroadcastAuthService;
+use AsteriskPbxManager\Services\ChannelManagerService;
+use AsteriskPbxManager\Services\ConfigurationValidator;
+use AsteriskPbxManager\Services\ConnectionPoolManager;
+use AsteriskPbxManager\Services\EventProcessor;
+use AsteriskPbxManager\Services\HealthCheckService;
+use AsteriskPbxManager\Services\QueueManagerService;
+use Illuminate\Support\ServiceProvider;
+use PAMI\Client\Impl\ClientImpl;
 
 class AsteriskPbxManagerServiceProvider extends ServiceProvider
 {
@@ -55,10 +54,10 @@ class AsteriskPbxManagerServiceProvider extends ServiceProvider
         $this->app->singleton(ClientImpl::class, function ($app) {
             $config = $app['config']['asterisk-pbx-manager'];
             $validator = $app->make(ConfigurationValidator::class);
-            
+
             // Validate and sanitize complete configuration
             $validatedConfig = $validator->validateConfiguration($config);
-            
+
             return new ClientImpl($validatedConfig['connection']);
         });
 
@@ -178,7 +177,6 @@ class AsteriskPbxManagerServiceProvider extends ServiceProvider
             }
         }
     }
-
 
     /**
      * Get the services provided by the provider.

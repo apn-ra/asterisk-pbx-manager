@@ -2,13 +2,13 @@
 
 namespace AsteriskPbxManager\Tests\Unit;
 
+use AsteriskPbxManager\Exceptions\ActionExecutionException;
+use AsteriskPbxManager\Exceptions\AsteriskConnectionException;
 use AsteriskPbxManager\Services\AsteriskManagerService;
 use AsteriskPbxManager\Tests\Unit\Mocks\PamiMockFactory;
 use AsteriskPbxManager\Tests\Unit\Mocks\ResponseMockFactory;
-use AsteriskPbxManager\Exceptions\AsteriskConnectionException;
-use AsteriskPbxManager\Exceptions\ActionExecutionException;
-use Illuminate\Support\Facades\Log;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class ErrorConditionsTest extends UnitTestCase
 {
@@ -116,7 +116,7 @@ class ErrorConditionsTest extends UnitTestCase
         $this->expectExceptionMessage('No such queue');
 
         $service->send(PamiMockFactory::createAction('QueueAdd', [
-            'Queue' => 'invalid-queue',
+            'Queue'     => 'invalid-queue',
             'Interface' => 'SIP/1001',
         ]));
     }
@@ -133,7 +133,7 @@ class ErrorConditionsTest extends UnitTestCase
         $this->expectExceptionMessage('Interface not in queue');
 
         $service->send(PamiMockFactory::createAction('QueueRemove', [
-            'Queue' => 'support',
+            'Queue'     => 'support',
             'Interface' => 'SIP/9999',
         ]));
     }
@@ -231,6 +231,7 @@ class ErrorConditionsTest extends UnitTestCase
         $mockClient = PamiMockFactory::createClient([
             'open' => function () use (&$connectionAttempts) {
                 $connectionAttempts++;
+
                 throw new Exception('Connection failed');
             },
         ]);
@@ -281,6 +282,7 @@ class ErrorConditionsTest extends UnitTestCase
             'open' => function () {
                 // Simulate delay
                 usleep(100000); // 100ms
+
                 throw new Exception('Another connection in progress');
             },
         ]);
@@ -321,9 +323,10 @@ class ErrorConditionsTest extends UnitTestCase
                 if ($requestCount > 10) {
                     return ResponseMockFactory::createErrorResponse('Rate limit exceeded', [
                         'Response' => 'Error',
-                        'ActionID' => 'test_' . uniqid(),
+                        'ActionID' => 'test_'.uniqid(),
                     ]);
                 }
+
                 return ResponseMockFactory::createOriginateSuccessResponse();
             },
         ]);
@@ -404,18 +407,18 @@ class ErrorConditionsTest extends UnitTestCase
         $mockClient = PamiMockFactory::createClient([
             'send' => function () use (&$operationCount) {
                 $operationCount++;
-                
+
                 // Every 3rd operation fails
                 if ($operationCount % 3 === 0) {
                     return ResponseMockFactory::createTimeoutResponse('Test');
                 }
-                
+
                 return ResponseMockFactory::createOriginateSuccessResponse();
             },
         ]);
 
         $service = new AsteriskManagerService($mockClient);
-        
+
         $successCount = 0;
         $failureCount = 0;
 
@@ -440,8 +443,8 @@ class ErrorConditionsTest extends UnitTestCase
     {
         $mockClient = PamiMockFactory::createClient([
             'send' => ResponseMockFactory::createOriginateErrorResponse('Channel not found', [
-                'Channel' => 'SIP/invalid-channel',
-                'Context' => 'internal',
+                'Channel'   => 'SIP/invalid-channel',
+                'Context'   => 'internal',
                 'Extension' => '1002',
             ]),
         ]);

@@ -2,20 +2,15 @@
 
 namespace AsteriskPbxManager\Tests\Unit\Services;
 
-use AsteriskPbxManager\Tests\Unit\UnitTestCase;
-use AsteriskPbxManager\Services\EventProcessor;
+use AsteriskPbxManager\Events\AsteriskEvent;
 use AsteriskPbxManager\Events\CallConnected;
 use AsteriskPbxManager\Events\CallEnded;
 use AsteriskPbxManager\Events\QueueMemberAdded;
-use AsteriskPbxManager\Events\AsteriskEvent;
-use PAMI\Message\Event\EventMessage;
-use PAMI\Message\Event\DialEvent;
-use PAMI\Message\Event\HangupEvent;
-use PAMI\Message\Event\BridgeEvent;
-use PAMI\Message\Event\QueueMemberAddedEvent;
-use Mockery;
-use Illuminate\Support\Facades\Log;
+use AsteriskPbxManager\Services\EventProcessor;
+use AsteriskPbxManager\Tests\Unit\UnitTestCase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
+use Mockery;
 
 class EventProcessorTest extends UnitTestCase
 {
@@ -24,7 +19,7 @@ class EventProcessorTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->processor = new EventProcessor();
     }
 
@@ -77,7 +72,7 @@ class EventProcessorTest extends UnitTestCase
     {
         $mockEvent = $this->createMockEvent('UnknownEvent', [
             'Channel' => 'SIP/1001-12345',
-            'Context' => 'default'
+            'Context' => 'default',
         ]);
 
         Event::shouldReceive('dispatch')
@@ -95,10 +90,9 @@ class EventProcessorTest extends UnitTestCase
         $this->processor->processEvent($mockEvent);
     }
 
-
     public function testRegisterCustomHandler()
     {
-        $handler = function($event) {
+        $handler = function ($event) {
             // Custom handler logic
         };
 
@@ -110,21 +104,20 @@ class EventProcessorTest extends UnitTestCase
 
     public function testAddEventFilter()
     {
-        $filter = function($event) {
+        $filter = function ($event) {
             return $event->getEventName() === 'Dial';
         };
 
         $this->processor->addEventFilter($filter);
-        
+
         // Since the method doesn't return anything, we just ensure no exception is thrown
         $this->assertTrue(true);
     }
 
-
     public function testGetStatistics()
     {
         $stats = $this->processor->getStatistics();
-        
+
         $this->assertIsArray($stats);
         $this->assertArrayHasKey('events_processed', $stats);
         $this->assertArrayHasKey('events_filtered', $stats);
@@ -136,15 +129,15 @@ class EventProcessorTest extends UnitTestCase
     {
         // Process an event to increment statistics
         $mockEvent = $this->createMockDialEvent('SIP/1001-12345', '2002', 'ANSWER');
-        
+
         Event::shouldReceive('dispatch')->once();
         Log::shouldReceive('info')->twice();
-        
+
         $this->processor->processEvent($mockEvent);
-        
+
         // Reset statistics
         $this->processor->resetStatistics();
-        
+
         $stats = $this->processor->getStatistics();
         $this->assertEquals(0, $stats['events_processed']);
         $this->assertEquals(0, $stats['events_filtered']);
@@ -153,7 +146,7 @@ class EventProcessorTest extends UnitTestCase
 
     public function testProcessEventWithFilteredEvent()
     {
-        $filter = function($event) {
+        $filter = function ($event) {
             return false; // Filter out all events
         };
 

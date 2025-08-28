@@ -2,18 +2,17 @@
 
 namespace AsteriskPbxManager\Tests\Unit\Services;
 
-use AsteriskPbxManager\Tests\Unit\UnitTestCase;
-use AsteriskPbxManager\Services\QueueManagerService;
-use AsteriskPbxManager\Services\AsteriskManagerService;
 use AsteriskPbxManager\Exceptions\ActionExecutionException;
+use AsteriskPbxManager\Services\AsteriskManagerService;
+use AsteriskPbxManager\Services\QueueManagerService;
+use AsteriskPbxManager\Tests\Unit\UnitTestCase;
+use Illuminate\Support\Facades\Log;
+use Mockery;
 use PAMI\Message\Action\QueueAddAction;
-use PAMI\Message\Action\QueueRemoveAction;
 use PAMI\Message\Action\QueuePauseAction;
-use PAMI\Message\Action\QueuesAction;
+use PAMI\Message\Action\QueueRemoveAction;
 use PAMI\Message\Action\QueueStatusAction;
 use PAMI\Message\Action\QueueSummaryAction;
-use Mockery;
-use Illuminate\Support\Facades\Log;
 
 class QueueManagerServiceTest extends UnitTestCase
 {
@@ -23,7 +22,7 @@ class QueueManagerServiceTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->mockAsteriskManager = Mockery::mock(AsteriskManagerService::class);
         $this->service = new QueueManagerService($this->mockAsteriskManager);
     }
@@ -32,7 +31,7 @@ class QueueManagerServiceTest extends UnitTestCase
     {
         $asteriskManager = Mockery::mock(AsteriskManagerService::class);
         $service = new QueueManagerService($asteriskManager);
-        
+
         $this->assertInstanceOf(QueueManagerService::class, $service);
     }
 
@@ -51,7 +50,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Queue member added successfully', Mockery::any());
 
         $result = $this->service->addMember('support', 'SIP/1001', 'John Doe', 0);
-        
+
         $this->assertTrue($result);
     }
 
@@ -70,7 +69,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Failed to add queue member', Mockery::any());
 
         $result = $this->service->addMember('support', 'SIP/1001', 'John Doe', 0);
-        
+
         $this->assertFalse($result);
     }
 
@@ -78,7 +77,7 @@ class QueueManagerServiceTest extends UnitTestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Queue name cannot be empty');
-        
+
         $this->service->addMember('', 'SIP/1001', 'John Doe', 0);
     }
 
@@ -86,7 +85,7 @@ class QueueManagerServiceTest extends UnitTestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Interface cannot be empty');
-        
+
         $this->service->addMember('support', '', 'John Doe', 0);
     }
 
@@ -105,7 +104,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Queue member removed successfully', Mockery::any());
 
         $result = $this->service->removeMember('support', 'SIP/1001');
-        
+
         $this->assertTrue($result);
     }
 
@@ -124,7 +123,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Failed to remove queue member', Mockery::any());
 
         $result = $this->service->removeMember('support', 'SIP/1001');
-        
+
         $this->assertFalse($result);
     }
 
@@ -132,7 +131,7 @@ class QueueManagerServiceTest extends UnitTestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Queue name cannot be empty');
-        
+
         $this->service->removeMember('', 'SIP/1001');
     }
 
@@ -140,7 +139,7 @@ class QueueManagerServiceTest extends UnitTestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Interface cannot be empty');
-        
+
         $this->service->removeMember('support', '');
     }
 
@@ -159,7 +158,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Queue member paused successfully', Mockery::any());
 
         $result = $this->service->pauseMember('support', 'SIP/1001', true, 'Break time');
-        
+
         $this->assertTrue($result);
     }
 
@@ -178,7 +177,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Failed to pause queue member', Mockery::any());
 
         $result = $this->service->pauseMember('support', 'SIP/1001', true, 'Break time');
-        
+
         $this->assertFalse($result);
     }
 
@@ -197,7 +196,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Queue member unpaused successfully', Mockery::any());
 
         $result = $this->service->pauseMember('support', 'SIP/1001', false, null);
-        
+
         $this->assertTrue($result);
     }
 
@@ -205,7 +204,7 @@ class QueueManagerServiceTest extends UnitTestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Queue name cannot be empty');
-        
+
         $this->service->pauseMember('', 'SIP/1001', true, 'Break time');
     }
 
@@ -213,21 +212,21 @@ class QueueManagerServiceTest extends UnitTestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Interface cannot be empty');
-        
+
         $this->service->pauseMember('support', '', true, 'Break time');
     }
 
     public function testGetQueueStatusSuccess()
     {
         $mockResponse = $this->createMockResponse(true, 'Success', [
-            'Queue' => 'support',
-            'Max' => '10',
-            'Strategy' => 'ringall',
-            'Calls' => '2',
-            'Holdtime' => '45',
-            'TalkTime' => '120',
+            'Queue'     => 'support',
+            'Max'       => '10',
+            'Strategy'  => 'ringall',
+            'Calls'     => '2',
+            'Holdtime'  => '45',
+            'TalkTime'  => '120',
             'Completed' => '50',
-            'Abandoned' => '5'
+            'Abandoned' => '5',
         ]);
 
         $this->mockAsteriskManager
@@ -241,7 +240,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Queue status retrieved successfully', Mockery::any());
 
         $result = $this->service->getQueueStatus('support');
-        
+
         $this->assertIsArray($result);
         $this->assertArrayHasKey('queue', $result);
         $this->assertArrayHasKey('max_members', $result);
@@ -268,7 +267,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Queue status retrieved successfully', Mockery::any());
 
         $result = $this->service->getQueueStatus(null);
-        
+
         $this->assertIsArray($result);
     }
 
@@ -287,7 +286,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Failed to get queue status', Mockery::any());
 
         $result = $this->service->getQueueStatus('support');
-        
+
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
@@ -295,13 +294,13 @@ class QueueManagerServiceTest extends UnitTestCase
     public function testGetQueueSummarySuccess()
     {
         $mockResponse = $this->createMockResponse(true, 'Success', [
-            'Queue' => 'support',
-            'LoggedIn' => '5',
-            'Available' => '3',
-            'Callers' => '2',
-            'HoldTime' => '30',
-            'TalkTime' => '90',
-            'LongestHoldTime' => '120'
+            'Queue'           => 'support',
+            'LoggedIn'        => '5',
+            'Available'       => '3',
+            'Callers'         => '2',
+            'HoldTime'        => '30',
+            'TalkTime'        => '90',
+            'LongestHoldTime' => '120',
         ]);
 
         $this->mockAsteriskManager
@@ -315,7 +314,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Queue summary retrieved successfully', Mockery::any());
 
         $result = $this->service->getQueueSummary('support');
-        
+
         $this->assertIsArray($result);
         $this->assertArrayHasKey('queue', $result);
         $this->assertArrayHasKey('logged_in', $result);
@@ -342,7 +341,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Queue summary retrieved successfully', Mockery::any());
 
         $result = $this->service->getQueueSummary(null);
-        
+
         $this->assertIsArray($result);
     }
 
@@ -361,7 +360,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Failed to get queue summary', Mockery::any());
 
         $result = $this->service->getQueueSummary('support');
-        
+
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
@@ -381,7 +380,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Queue status retrieved successfully', Mockery::any());
 
         $result = $this->service->getQueueMembers('support');
-        
+
         $this->assertIsArray($result);
     }
 
@@ -389,7 +388,7 @@ class QueueManagerServiceTest extends UnitTestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Queue name cannot be empty');
-        
+
         $this->service->getQueueMembers('');
     }
 
@@ -398,8 +397,8 @@ class QueueManagerServiceTest extends UnitTestCase
         $mockResponse = $this->createMockResponse(true, 'Success', [
             'members' => [
                 ['interface' => 'SIP/1001', 'name' => 'John Doe'],
-                ['interface' => 'SIP/1002', 'name' => 'Jane Smith']
-            ]
+                ['interface' => 'SIP/1002', 'name' => 'Jane Smith'],
+            ],
         ]);
 
         $this->mockAsteriskManager
@@ -413,7 +412,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Queue status retrieved successfully', Mockery::any());
 
         $result = $this->service->memberExists('support', 'SIP/1001');
-        
+
         $this->assertTrue($result);
     }
 
@@ -421,8 +420,8 @@ class QueueManagerServiceTest extends UnitTestCase
     {
         $mockResponse = $this->createMockResponse(true, 'Success', [
             'members' => [
-                ['interface' => 'SIP/1002', 'name' => 'Jane Smith']
-            ]
+                ['interface' => 'SIP/1002', 'name' => 'Jane Smith'],
+            ],
         ]);
 
         $this->mockAsteriskManager
@@ -436,7 +435,7 @@ class QueueManagerServiceTest extends UnitTestCase
             ->with('Queue status retrieved successfully', Mockery::any());
 
         $result = $this->service->memberExists('support', 'SIP/1001');
-        
+
         $this->assertFalse($result);
     }
 
@@ -444,7 +443,7 @@ class QueueManagerServiceTest extends UnitTestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Queue name cannot be empty');
-        
+
         $this->service->memberExists('', 'SIP/1001');
     }
 
@@ -452,7 +451,7 @@ class QueueManagerServiceTest extends UnitTestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Interface cannot be empty');
-        
+
         $this->service->memberExists('support', '');
     }
 
@@ -469,7 +468,7 @@ class QueueManagerServiceTest extends UnitTestCase
 
         $this->expectException(ActionExecutionException::class);
         $this->expectExceptionMessage('Connection failed');
-        
+
         $this->service->addMember('support', 'SIP/1001', 'John Doe', 0);
     }
 }

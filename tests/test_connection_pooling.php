@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__.'/vendor/autoload.php';
 
 use AsteriskPbxManager\Services\ConnectionPoolManager;
 use AsteriskPbxManager\Services\PooledConnection;
@@ -11,37 +11,37 @@ echo "==========================================\n\n";
 try {
     // Test 1: Check if classes can be loaded
     echo "1. Testing class loading...\n";
-    
+
     if (class_exists(ConnectionPoolManager::class)) {
         echo "   ✓ ConnectionPoolManager class loaded successfully\n";
     } else {
         echo "   ✗ ConnectionPoolManager class not found\n";
         exit(1);
     }
-    
+
     if (class_exists(PooledConnection::class)) {
         echo "   ✓ PooledConnection class loaded successfully\n";
     } else {
         echo "   ✗ PooledConnection class not found\n";
         exit(1);
     }
-    
+
     // Test 2: Check configuration structure
     echo "\n2. Testing configuration structure...\n";
-    
-    $configPath = __DIR__ . '/src/Config/asterisk-pbx-manager.php';
+
+    $configPath = __DIR__.'/src/Config/asterisk-pbx-manager.php';
     if (file_exists($configPath)) {
         $config = require $configPath;
-        
+
         if (isset($config['connection_pool'])) {
             echo "   ✓ Connection pool configuration section found\n";
-            
+
             $requiredSections = [
                 'enabled', 'min_connections', 'max_connections', 'connection_timeout',
                 'acquire_timeout', 'max_connection_age', 'enable_health_monitoring',
-                'cleanup_interval', 'enable_statistics', 'load_balancing_strategy'
+                'cleanup_interval', 'enable_statistics', 'load_balancing_strategy',
             ];
-            
+
             foreach ($requiredSections as $section) {
                 if (isset($config['connection_pool'][$section])) {
                     echo "   ✓ Connection pool '{$section}' setting found\n";
@@ -55,20 +55,20 @@ try {
     } else {
         echo "   ✗ Configuration file not found\n";
     }
-    
+
     // Test 3: Check service provider updates
     echo "\n3. Testing service provider registration...\n";
-    
-    $providerPath = __DIR__ . '/src/AsteriskPbxManagerServiceProvider.php';
+
+    $providerPath = __DIR__.'/src/AsteriskPbxManagerServiceProvider.php';
     if (file_exists($providerPath)) {
         $providerContent = file_get_contents($providerPath);
-        
+
         if (strpos($providerContent, 'ConnectionPoolManager') !== false) {
             echo "   ✓ ConnectionPoolManager registration found in service provider\n";
         } else {
             echo "   ✗ ConnectionPoolManager registration not found in service provider\n";
         }
-        
+
         if (strpos($providerContent, 'use AsteriskPbxManager\Services\ConnectionPoolManager') !== false) {
             echo "   ✓ ConnectionPoolManager import found in service provider\n";
         } else {
@@ -77,10 +77,10 @@ try {
     } else {
         echo "   ✗ Service provider file not found\n";
     }
-    
+
     // Test 4: Test method signatures and interfaces
     echo "\n4. Testing class interfaces...\n";
-    
+
     // ConnectionPoolManager methods
     $poolManagerReflection = new ReflectionClass(ConnectionPoolManager::class);
     $expectedPoolMethods = [
@@ -89,9 +89,9 @@ try {
         'isEnabled',
         'getStats',
         'cleanup',
-        'closeAll'
+        'closeAll',
     ];
-    
+
     foreach ($expectedPoolMethods as $method) {
         if ($poolManagerReflection->hasMethod($method)) {
             echo "   ✓ ConnectionPoolManager::{$method}() method found\n";
@@ -99,7 +99,7 @@ try {
             echo "   ✗ ConnectionPoolManager::{$method}() method not found\n";
         }
     }
-    
+
     // PooledConnection methods
     $connectionReflection = new ReflectionClass(PooledConnection::class);
     $expectedConnectionMethods = [
@@ -113,9 +113,9 @@ try {
         'isHealthy',
         'shouldRecycle',
         'getStats',
-        'getId'
+        'getId',
     ];
-    
+
     foreach ($expectedConnectionMethods as $method) {
         if ($connectionReflection->hasMethod($method)) {
             echo "   ✓ PooledConnection::{$method}() method found\n";
@@ -123,18 +123,18 @@ try {
             echo "   ✗ PooledConnection::{$method}() method not found\n";
         }
     }
-    
+
     // Test 5: Test constants and states
     echo "\n5. Testing connection states...\n";
-    
+
     $expectedStates = [
         'STATE_IDLE',
-        'STATE_IN_USE', 
+        'STATE_IN_USE',
         'STATE_CONNECTING',
         'STATE_DISCONNECTED',
-        'STATE_ERROR'
+        'STATE_ERROR',
     ];
-    
+
     foreach ($expectedStates as $state) {
         if (defined("AsteriskPbxManager\\Services\\PooledConnection::{$state}")) {
             echo "   ✓ PooledConnection::{$state} constant defined\n";
@@ -142,28 +142,32 @@ try {
             echo "   ✗ PooledConnection::{$state} constant not found\n";
         }
     }
-    
+
     // Test 6: Test basic instantiation (without actual connection)
     echo "\n6. Testing basic instantiation...\n";
-    
+
     try {
         // Mock dependencies for testing
-        $mockSanitizer = new class {
-            public function sanitizeInput($input) { return $input; }
+        $mockSanitizer = new class() {
+            public function sanitizeInput($input)
+            {
+                return $input;
+            }
         };
-        
-        $mockAuditLogger = new class {
-            public function logAction($action, $type, $success, $data = []) { }
+
+        $mockAuditLogger = new class() {
+            public function logAction($action, $type, $success, $data = [])
+            {
+            }
         };
-        
+
         // This would normally require proper Laravel container setup
         echo "   ✓ Basic class structure is valid for instantiation\n";
-        
     } catch (Exception $e) {
-        echo "   ✗ Basic instantiation test failed: " . $e->getMessage() . "\n";
+        echo '   ✗ Basic instantiation test failed: '.$e->getMessage()."\n";
     }
-    
-    echo "\n" . str_repeat("=", 50) . "\n";
+
+    echo "\n".str_repeat('=', 50)."\n";
     echo "Connection Pooling Implementation Test Summary:\n";
     echo "- ConnectionPoolManager class: ✓ Created\n";
     echo "- PooledConnection class: ✓ Created\n";
@@ -172,7 +176,7 @@ try {
     echo "- Required methods: ✓ Implemented\n";
     echo "- Connection states: ✓ Defined\n";
     echo "\n🎉 Connection pooling implementation appears to be complete!\n";
-    
+
     echo "\nKey Features Implemented:\n";
     echo "- Pool management with min/max connections\n";
     echo "- Connection lifecycle management\n";
@@ -182,7 +186,7 @@ try {
     echo "- Automatic cleanup and maintenance\n";
     echo "- Comprehensive configuration options\n";
     echo "- Error handling and circuit breaker support\n";
-    
+
     echo "\nConfiguration Options Available:\n";
     echo "- ASTERISK_POOL_ENABLED - Enable/disable pooling\n";
     echo "- ASTERISK_POOL_MIN_CONNECTIONS - Minimum pool size\n";
@@ -192,10 +196,9 @@ try {
     echo "- ASTERISK_POOL_ENABLE_HEALTH_MONITORING - Health checks\n";
     echo "- ASTERISK_POOL_LOAD_BALANCING - Load balancing strategy\n";
     echo "- And many more configuration options...\n";
-    
 } catch (Exception $e) {
-    echo "\n❌ Error during testing: " . $e->getMessage() . "\n";
-    echo "Stack trace:\n" . $e->getTraceAsString() . "\n";
+    echo "\n❌ Error during testing: ".$e->getMessage()."\n";
+    echo "Stack trace:\n".$e->getTraceAsString()."\n";
     exit(1);
 }
 

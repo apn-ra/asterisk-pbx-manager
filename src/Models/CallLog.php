@@ -2,16 +2,17 @@
 
 namespace AsteriskPbxManager\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Carbon\Carbon;
 
 class CallLog extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
+    use SoftDeletes;
 
     /**
      * The table associated with the model.
@@ -64,28 +65,28 @@ class CallLog extends Model
         'channel_variables',
         'asterisk_server',
         'processed_by',
-        'processed_at'
+        'processed_at',
     ];
 
     /**
      * The attributes that should be cast.
      */
     protected $casts = [
-        'started_at' => 'datetime',
-        'answered_at' => 'datetime',
-        'ended_at' => 'datetime',
-        'processed_at' => 'datetime',
-        'ring_duration' => 'integer',
-        'talk_duration' => 'integer',
-        'total_duration' => 'integer',
-        'queue_wait_time' => 'integer',
-        'recording_size' => 'integer',
-        'quality_score' => 'decimal:2',
-        'cost' => 'decimal:4',
-        'cost_per_minute' => 'decimal:4',
-        'recorded' => 'boolean',
-        'quality_metrics' => 'array',
-        'metadata' => 'array',
+        'started_at'        => 'datetime',
+        'answered_at'       => 'datetime',
+        'ended_at'          => 'datetime',
+        'processed_at'      => 'datetime',
+        'ring_duration'     => 'integer',
+        'talk_duration'     => 'integer',
+        'total_duration'    => 'integer',
+        'queue_wait_time'   => 'integer',
+        'recording_size'    => 'integer',
+        'quality_score'     => 'decimal:2',
+        'cost'              => 'decimal:4',
+        'cost_per_minute'   => 'decimal:4',
+        'recorded'          => 'boolean',
+        'quality_metrics'   => 'array',
+        'metadata'          => 'array',
         'channel_variables' => 'array',
     ];
 
@@ -104,7 +105,7 @@ class CallLog extends Model
         'cost_formatted',
         'is_answered',
         'is_successful',
-        'call_outcome'
+        'call_outcome',
     ];
 
     /**
@@ -210,11 +211,11 @@ class CallLog extends Model
     public function scopeQueueCalls(Builder $query, ?string $queueName = null): Builder
     {
         $query = $query->whereNotNull('queue_name');
-        
+
         if ($queueName) {
             $query->where('queue_name', $queueName);
         }
-        
+
         return $query;
     }
 
@@ -275,7 +276,7 @@ class CallLog extends Model
         $currency = $this->cost_currency ?? 'USD';
         $symbol = $this->getCurrencySymbol($currency);
 
-        return $symbol . number_format($this->cost, 2);
+        return $symbol.number_format($this->cost, 2);
     }
 
     /**
@@ -307,13 +308,13 @@ class CallLog extends Model
             return 'answered_no_talk';
         }
 
-        return match($this->call_status) {
-            'busy' => 'busy',
+        return match ($this->call_status) {
+            'busy'      => 'busy',
             'no_answer' => 'no_answer',
-            'missed' => 'missed',
-            'failed' => 'failed',
+            'missed'    => 'missed',
+            'failed'    => 'failed',
             'abandoned' => 'abandoned',
-            default => 'unknown'
+            default     => 'unknown'
         };
     }
 
@@ -341,17 +342,17 @@ class CallLog extends Model
         $query = static::dateRange($startDate, $endDate);
 
         return [
-            'total_calls' => $query->count(),
-            'answered_calls' => $query->answered()->count(),
-            'unanswered_calls' => $query->unanswered()->count(),
-            'total_talk_time' => $query->sum('talk_duration'),
+            'total_calls'       => $query->count(),
+            'answered_calls'    => $query->answered()->count(),
+            'unanswered_calls'  => $query->unanswered()->count(),
+            'total_talk_time'   => $query->sum('talk_duration'),
             'average_talk_time' => $query->answered()->avg('talk_duration'),
-            'total_cost' => $query->sum('cost'),
-            'inbound_calls' => $query->byDirection('inbound')->count(),
-            'outbound_calls' => $query->byDirection('outbound')->count(),
-            'internal_calls' => $query->byDirection('internal')->count(),
-            'queue_calls' => $query->queueCalls()->count(),
-            'recorded_calls' => $query->recorded()->count(),
+            'total_cost'        => $query->sum('cost'),
+            'inbound_calls'     => $query->byDirection('inbound')->count(),
+            'outbound_calls'    => $query->byDirection('outbound')->count(),
+            'internal_calls'    => $query->byDirection('internal')->count(),
+            'queue_calls'       => $query->queueCalls()->count(),
+            'recorded_calls'    => $query->recorded()->count(),
         ];
     }
 
@@ -370,7 +371,7 @@ class CallLog extends Model
             ->get();
 
         $hourlyData = array_fill(0, 24, 0);
-        
+
         foreach ($calls as $call) {
             $hourlyData[$call->hour] = $call->count;
         }
@@ -403,14 +404,14 @@ class CallLog extends Model
      */
     protected function getCurrencySymbol(string $currency): string
     {
-        return match(strtoupper($currency)) {
-            'USD' => '$',
-            'EUR' => '€',
-            'GBP' => '£',
-            'JPY' => '¥',
-            'CAD' => 'C$',
-            'AUD' => 'A$',
-            default => $currency . ' '
+        return match (strtoupper($currency)) {
+            'USD'   => '$',
+            'EUR'   => '€',
+            'GBP'   => '£',
+            'JPY'   => '¥',
+            'CAD'   => 'C$',
+            'AUD'   => 'A$',
+            default => $currency.' '
         };
     }
 

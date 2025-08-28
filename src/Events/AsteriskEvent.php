@@ -2,20 +2,22 @@
 
 namespace AsteriskPbxManager\Events;
 
+use AsteriskPbxManager\Services\BroadcastAuthService;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use PAMI\Message\Event\EventMessage;
-use AsteriskPbxManager\Services\BroadcastAuthService;
 
 /**
  * Base class for all Asterisk AMI events.
  */
 class AsteriskEvent implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
     /**
      * The raw AMI event data.
@@ -55,7 +57,7 @@ class AsteriskEvent implements ShouldBroadcast
         $this->event = $event;
         $this->timestamp = time();
         $this->eventName = $event ? $event->getEventName() : 'Unknown';
-        
+
         if ($event) {
             $this->extractEventData($event);
         }
@@ -69,9 +71,9 @@ class AsteriskEvent implements ShouldBroadcast
     protected function extractEventData(EventMessage $event): void
     {
         $this->data = [
-            'event' => $event->getEventName(),
+            'event'     => $event->getEventName(),
             'timestamp' => $this->timestamp,
-            'keys' => $event->getKeys(),
+            'keys'      => $event->getKeys(),
         ];
 
         // Extract common AMI event fields
@@ -109,7 +111,7 @@ class AsteriskEvent implements ShouldBroadcast
 
         $channelName = "{$channelPrefix}.events";
 
-        return $isPrivate 
+        return $isPrivate
             ? [new \Illuminate\Broadcasting\PrivateChannel($channelName)]
             : [new Channel($channelName)];
     }
@@ -133,8 +135,8 @@ class AsteriskEvent implements ShouldBroadcast
     {
         return [
             'event_name' => $this->eventName,
-            'timestamp' => $this->timestamp,
-            'data' => $this->data,
+            'timestamp'  => $this->timestamp,
+            'data'       => $this->data,
         ];
     }
 
@@ -148,7 +150,7 @@ class AsteriskEvent implements ShouldBroadcast
         // Check basic configuration first
         $broadcastEnabled = config('asterisk-pbx-manager.events.broadcast', true);
         $eventsEnabled = config('asterisk-pbx-manager.events.enabled', true);
-        
+
         if (!$broadcastEnabled || !$eventsEnabled) {
             return false;
         }
@@ -156,21 +158,20 @@ class AsteriskEvent implements ShouldBroadcast
         // Check authentication if enabled
         try {
             $authService = app(BroadcastAuthService::class);
-            
+
             if ($authService->isEnabled()) {
                 return $authService->canReceiveBroadcast();
             }
-            
+
             return true;
-            
         } catch (\Exception $e) {
             // Log authentication failure but don't break broadcasting for non-auth errors
             \Illuminate\Support\Facades\Log::warning('Broadcast authentication check failed', [
-                'event' => $this->eventName,
-                'error' => $e->getMessage(),
-                'context' => 'asterisk_event_broadcast'
+                'event'   => $this->eventName,
+                'error'   => $e->getMessage(),
+                'context' => 'asterisk_event_broadcast',
             ]);
-            
+
             // If authentication service fails, fall back to basic broadcast decision
             // This ensures the system doesn't break if auth service has issues
             return true;
@@ -181,7 +182,8 @@ class AsteriskEvent implements ShouldBroadcast
      * Get event data by key.
      *
      * @param string $key
-     * @param mixed $default
+     * @param mixed  $default
+     *
      * @return mixed
      */
     public function getData(string $key, $default = null)
@@ -233,6 +235,7 @@ class AsteriskEvent implements ShouldBroadcast
      * Check if event has specific data key.
      *
      * @param string $key
+     *
      * @return bool
      */
     public function hasData(string $key): bool
@@ -309,8 +312,8 @@ class AsteriskEvent implements ShouldBroadcast
     {
         return [
             'event_name' => $this->eventName,
-            'timestamp' => $this->timestamp,
-            'data' => $this->data,
+            'timestamp'  => $this->timestamp,
+            'data'       => $this->data,
         ];
     }
 

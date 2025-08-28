@@ -35,11 +35,11 @@ class ActionExecutionException extends Exception
     /**
      * Create a new action execution exception instance.
      *
-     * @param string $message
-     * @param int $code
+     * @param string         $message
+     * @param int            $code
      * @param Exception|null $previous
      */
-    public function __construct(string $message = 'AMI action execution failed', int $code = 0, Exception $previous = null)
+    public function __construct(string $message = 'AMI action execution failed', int $code = 0, ?Exception $previous = null)
     {
         $this->errorReference = SecureErrorHandler::generateErrorReference();
         parent::__construct($message, $code, $previous);
@@ -48,30 +48,31 @@ class ActionExecutionException extends Exception
     /**
      * Create exception for action failure with response.
      *
-     * @param ActionMessage $action
+     * @param ActionMessage   $action
      * @param ResponseMessage $response
+     *
      * @return static
      */
     public static function actionFailed(ActionMessage $action, ResponseMessage $response): static
     {
         $actionName = $action->getAction();
         $responseMessage = $response->getMessage() ?? 'Unknown error';
-        
+
         $detailedMessage = "Action '{$actionName}' failed: {$responseMessage}";
         $secureMessage = SecureErrorHandler::generateSecureMessage(
             SecureErrorHandler::ERROR_ACTION_FAILED,
             $detailedMessage,
             [
-                'action_name' => $actionName,
-                'action_id' => $action->getActionId(),
-                'response_success' => $response->isSuccess()
+                'action_name'      => $actionName,
+                'action_id'        => $action->getActionId(),
+                'response_success' => $response->isSuccess(),
             ]
         );
-        
+
         $exception = new static($secureMessage);
         $exception->setAction($action);
         $exception->setResponse($response);
-        
+
         return $exception;
     }
 
@@ -79,27 +80,28 @@ class ActionExecutionException extends Exception
      * Create exception for action timeout.
      *
      * @param ActionMessage $action
-     * @param int $timeout
+     * @param int           $timeout
+     *
      * @return static
      */
     public static function timeout(ActionMessage $action, int $timeout): static
     {
         $actionName = $action->getAction();
-        
+
         $detailedMessage = "Action '{$actionName}' timed out after {$timeout} seconds";
         $secureMessage = SecureErrorHandler::generateSecureMessage(
             SecureErrorHandler::ERROR_ACTION_TIMEOUT,
             $detailedMessage,
             [
-                'action_name' => $actionName,
-                'action_id' => $action->getActionId(),
-                'timeout_seconds' => $timeout
+                'action_name'     => $actionName,
+                'action_id'       => $action->getActionId(),
+                'timeout_seconds' => $timeout,
             ]
         );
-        
+
         $exception = new static($secureMessage);
         $exception->setAction($action);
-        
+
         return $exception;
     }
 
@@ -109,6 +111,7 @@ class ActionExecutionException extends Exception
      * @param string $actionName
      * @param string $parameter
      * @param string $value
+     *
      * @return static
      */
     public static function invalidParameter(string $actionName, string $parameter, string $value): static
@@ -118,12 +121,12 @@ class ActionExecutionException extends Exception
             SecureErrorHandler::ERROR_INVALID_PARAMETER,
             $detailedMessage,
             [
-                'action_name' => $actionName,
-                'parameter' => $parameter,
-                'parameter_value' => $value
+                'action_name'     => $actionName,
+                'parameter'       => $parameter,
+                'parameter_value' => $value,
             ]
         );
-        
+
         return new static($secureMessage);
     }
 
@@ -132,6 +135,7 @@ class ActionExecutionException extends Exception
      *
      * @param string $actionName
      * @param string $parameter
+     *
      * @return static
      */
     public static function missingParameter(string $actionName, string $parameter): static
@@ -142,10 +146,10 @@ class ActionExecutionException extends Exception
             $detailedMessage,
             [
                 'action_name' => $actionName,
-                'parameter' => $parameter
+                'parameter'   => $parameter,
             ]
         );
-        
+
         return new static($secureMessage);
     }
 
@@ -154,6 +158,7 @@ class ActionExecutionException extends Exception
      *
      * @param string $actionName
      * @param string $username
+     *
      * @return static
      */
     public static function permissionDenied(string $actionName, string $username): static
@@ -164,10 +169,10 @@ class ActionExecutionException extends Exception
             $detailedMessage,
             [
                 'action_name' => $actionName,
-                'username' => $username
+                'username'    => $username,
             ]
         );
-        
+
         return new static($secureMessage);
     }
 
@@ -175,11 +180,13 @@ class ActionExecutionException extends Exception
      * Set the action that failed.
      *
      * @param ActionMessage $action
+     *
      * @return $this
      */
     public function setAction(ActionMessage $action): self
     {
         $this->action = $action;
+
         return $this;
     }
 
@@ -197,11 +204,13 @@ class ActionExecutionException extends Exception
      * Set the response from Asterisk.
      *
      * @param ResponseMessage $response
+     *
      * @return $this
      */
     public function setResponse(ResponseMessage $response): self
     {
         $this->response = $response;
+
         return $this;
     }
 

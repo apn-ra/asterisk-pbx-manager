@@ -1,47 +1,47 @@
 <?php
 
 /**
- * Advanced Integration Patterns Example
- * 
+ * Advanced Integration Patterns Example.
+ *
  * This example demonstrates advanced integration patterns for the Asterisk PBX Manager package
  * including middleware, job queues, broadcasting, service coordination, and complex workflows.
  */
 
 namespace App\Examples;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\PrivateChannel;
-use AsteriskPbxManager\Services\AsteriskManagerService;
-use AsteriskPbxManager\Services\QueueManagerService;
-use AsteriskPbxManager\Services\EventProcessor;
 use AsteriskPbxManager\Events\CallConnected;
 use AsteriskPbxManager\Events\CallEnded;
-use AsteriskPbxManager\Models\CallLog;
+use AsteriskPbxManager\Services\AsteriskManagerService;
+use AsteriskPbxManager\Services\EventProcessor;
+use AsteriskPbxManager\Services\QueueManagerService;
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 
 /**
- * Example 1: Advanced Middleware Integration
- * 
+ * Example 1: Advanced Middleware Integration.
+ *
  * Custom middleware for rate limiting, authentication, and connection health checks
  */
 class AsteriskConnectionMiddleware
 {
     public function __construct(
         private AsteriskManagerService $asteriskManager
-    ) {}
+    ) {
+    }
 
     /**
-     * Handle an incoming request
+     * Handle an incoming request.
      */
     public function handle(Request $request, \Closure $next): Response
     {
@@ -50,14 +50,14 @@ class AsteriskConnectionMiddleware
             return response()->json([
                 'success' => false,
                 'message' => 'Asterisk PBX is not connected',
-                'error' => 'Service temporarily unavailable'
+                'error'   => 'Service temporarily unavailable',
             ], 503);
         }
 
         // Add connection info to request
         $request->merge([
             '_asterisk_connected' => true,
-            '_asterisk_status' => $this->getConnectionStatus()
+            '_asterisk_status'    => $this->getConnectionStatus(),
         ]);
 
         return $next($request);
@@ -66,32 +66,32 @@ class AsteriskConnectionMiddleware
     private function getConnectionStatus(): array
     {
         return [
-            'connected_at' => Cache::get('asterisk_connected_at'),
-            'last_ping' => Cache::get('asterisk_last_ping'),
-            'connection_health' => 'good'
+            'connected_at'      => Cache::get('asterisk_connected_at'),
+            'last_ping'         => Cache::get('asterisk_last_ping'),
+            'connection_health' => 'good',
         ];
     }
 }
 
 /**
- * Rate limiting middleware for AMI operations
+ * Rate limiting middleware for AMI operations.
  */
 class AsteriskRateLimitMiddleware
 {
     /**
-     * Handle rate limiting for AMI operations
+     * Handle rate limiting for AMI operations.
      */
     public function handle(Request $request, \Closure $next, int $maxAttempts = 60, int $decayMinutes = 1): Response
     {
-        $key = 'asterisk_rate_limit:' . $request->ip();
-        
+        $key = 'asterisk_rate_limit:'.$request->ip();
+
         $attempts = Cache::get($key, 0);
-        
+
         if ($attempts >= $maxAttempts) {
             return response()->json([
-                'success' => false,
-                'message' => 'Too many AMI requests',
-                'retry_after' => $decayMinutes * 60
+                'success'     => false,
+                'message'     => 'Too many AMI requests',
+                'retry_after' => $decayMinutes * 60,
             ], 429);
         }
 
@@ -102,28 +102,31 @@ class AsteriskRateLimitMiddleware
 }
 
 /**
- * Example 2: Advanced Job Queue Integration
- * 
+ * Example 2: Advanced Job Queue Integration.
+ *
  * Queued jobs for handling heavy AMI operations and event processing
  */
 class ProcessCallAnalyticsJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use SerializesModels;
 
     public function __construct(
         private string $callUniqueId,
         private array $callData
-    ) {}
+    ) {
+    }
 
     /**
-     * Execute the job
+     * Execute the job.
      */
     public function handle(AsteriskManagerService $asteriskManager): void
     {
         try {
             Log::info('Processing call analytics', [
                 'unique_id' => $this->callUniqueId,
-                'call_data' => $this->callData
+                'call_data' => $this->callData,
             ]);
 
             // Perform complex analytics
@@ -134,13 +137,12 @@ class ProcessCallAnalyticsJob implements ShouldQueue
 
             // Trigger follow-up actions
             $this->triggerFollowUpActions($analytics);
-
         } catch (\Exception $e) {
             Log::error('Call analytics processing failed', [
                 'unique_id' => $this->callUniqueId,
-                'error' => $e->getMessage()
+                'error'     => $e->getMessage(),
             ]);
-            
+
             $this->fail($e);
         }
     }
@@ -148,11 +150,11 @@ class ProcessCallAnalyticsJob implements ShouldQueue
     private function performCallAnalytics(): array
     {
         return [
-            'call_quality_score' => $this->calculateQualityScore(),
+            'call_quality_score'               => $this->calculateQualityScore(),
             'customer_satisfaction_prediction' => $this->predictSatisfaction(),
-            'agent_performance_metrics' => $this->calculateAgentMetrics(),
-            'cost_analysis' => $this->calculateCosts(),
-            'compliance_check' => $this->checkCompliance(),
+            'agent_performance_metrics'        => $this->calculateAgentMetrics(),
+            'cost_analysis'                    => $this->calculateCosts(),
+            'compliance_check'                 => $this->checkCompliance(),
         ];
     }
 
@@ -163,15 +165,15 @@ class ProcessCallAnalyticsJob implements ShouldQueue
         $transferCount = $this->callData['transfers'] ?? 0;
 
         $score = 100;
-        
+
         // Deduct points for long hold times
         if ($holdTime > 60) {
             $score -= min(($holdTime - 60) / 10, 30);
         }
-        
+
         // Deduct points for multiple transfers
         $score -= $transferCount * 10;
-        
+
         // Bonus for reasonable duration
         if ($duration >= 120 && $duration <= 600) {
             $score += 5;
@@ -183,19 +185,19 @@ class ProcessCallAnalyticsJob implements ShouldQueue
     private function predictSatisfaction(): string
     {
         $qualityScore = $this->calculateQualityScore();
-        
-        return match(true) {
+
+        return match (true) {
             $qualityScore >= 80 => 'high',
             $qualityScore >= 60 => 'medium',
-            default => 'low'
+            default             => 'low'
         };
     }
 
     private function calculateAgentMetrics(): array
     {
         return [
-            'response_time' => $this->callData['response_time'] ?? 0,
-            'resolution_rate' => $this->callData['resolved'] ?? false ? 100 : 0,
+            'response_time'         => $this->callData['response_time'] ?? 0,
+            'resolution_rate'       => $this->callData['resolved'] ?? false ? 100 : 0,
             'professionalism_score' => rand(80, 100), // Would be calculated from voice analysis
         ];
     }
@@ -206,20 +208,20 @@ class ProcessCallAnalyticsJob implements ShouldQueue
         $costPerMinute = 0.05; // Example rate
 
         return [
-            'call_cost' => ($duration / 60) * $costPerMinute,
-            'agent_cost' => ($duration / 60) * 0.50, // Example agent cost
+            'call_cost'           => ($duration / 60) * $costPerMinute,
+            'agent_cost'          => ($duration / 60) * 0.50, // Example agent cost
             'infrastructure_cost' => 0.01,
-            'total_cost' => (($duration / 60) * ($costPerMinute + 0.50)) + 0.01
+            'total_cost'          => (($duration / 60) * ($costPerMinute + 0.50)) + 0.01,
         ];
     }
 
     private function checkCompliance(): array
     {
         return [
-            'recording_enabled' => $this->callData['recorded'] ?? false,
-            'consent_obtained' => $this->callData['consent'] ?? false,
+            'recording_enabled'        => $this->callData['recorded'] ?? false,
+            'consent_obtained'         => $this->callData['consent'] ?? false,
             'data_retention_compliant' => true,
-            'privacy_policy_followed' => true,
+            'privacy_policy_followed'  => true,
         ];
     }
 
@@ -244,30 +246,33 @@ class ProcessCallAnalyticsJob implements ShouldQueue
 }
 
 /**
- * Job for bulk queue operations
+ * Job for bulk queue operations.
  */
 class BulkQueueOperationJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use SerializesModels;
 
     public function __construct(
         private string $operation,
         private array $queues,
         private array $members,
         private array $options = []
-    ) {}
+    ) {
+    }
 
     public function handle(QueueManagerService $queueManager): void
     {
         try {
             foreach ($this->queues as $queue) {
                 foreach ($this->members as $member) {
-                    match($this->operation) {
-                        'add' => $queueManager->addMember($queue, $member, $this->options),
-                        'remove' => $queueManager->removeMember($queue, $member),
-                        'pause' => $queueManager->pauseMember($queue, $member, true, $this->options['reason'] ?? ''),
+                    match ($this->operation) {
+                        'add'     => $queueManager->addMember($queue, $member, $this->options),
+                        'remove'  => $queueManager->removeMember($queue, $member),
+                        'pause'   => $queueManager->pauseMember($queue, $member, true, $this->options['reason'] ?? ''),
                         'unpause' => $queueManager->pauseMember($queue, $member, false),
-                        default => throw new \InvalidArgumentException("Unknown operation: {$this->operation}")
+                        default   => throw new \InvalidArgumentException("Unknown operation: {$this->operation}")
                     };
 
                     // Brief pause to avoid overwhelming the AMI
@@ -277,24 +282,23 @@ class BulkQueueOperationJob implements ShouldQueue
 
             Log::info('Bulk queue operation completed', [
                 'operation' => $this->operation,
-                'queues' => $this->queues,
-                'members' => count($this->members)
+                'queues'    => $this->queues,
+                'members'   => count($this->members),
             ]);
-
         } catch (\Exception $e) {
             Log::error('Bulk queue operation failed', [
                 'operation' => $this->operation,
-                'error' => $e->getMessage()
+                'error'     => $e->getMessage(),
             ]);
-            
+
             $this->fail($e);
         }
     }
 }
 
 /**
- * Example 3: Advanced Event Broadcasting
- * 
+ * Example 3: Advanced Event Broadcasting.
+ *
  * Real-time event broadcasting with enhanced data and filtering
  */
 class EnhancedCallEvent implements ShouldBroadcast
@@ -306,51 +310,52 @@ class EnhancedCallEvent implements ShouldBroadcast
         private string $uniqueId,
         private array $callData,
         private array $metadata = []
-    ) {}
+    ) {
+    }
 
     /**
-     * Get the channels the event should broadcast on
+     * Get the channels the event should broadcast on.
      */
     public function broadcastOn(): array
     {
         $channels = [
             new Channel('asterisk.calls'),
-            new Channel('asterisk.call.' . $this->uniqueId),
+            new Channel('asterisk.call.'.$this->uniqueId),
         ];
 
         // Add queue-specific channels if applicable
         if (isset($this->callData['queue'])) {
-            $channels[] = new Channel('asterisk.queue.' . $this->callData['queue']);
+            $channels[] = new Channel('asterisk.queue.'.$this->callData['queue']);
         }
 
         // Add agent-specific channels
         if (isset($this->callData['agent_id'])) {
-            $channels[] = new PrivateChannel('asterisk.agent.' . $this->callData['agent_id']);
+            $channels[] = new PrivateChannel('asterisk.agent.'.$this->callData['agent_id']);
         }
 
         return $channels;
     }
 
     /**
-     * Get the event name for broadcasting
+     * Get the event name for broadcasting.
      */
     public function broadcastAs(): string
     {
-        return 'call.' . $this->eventType;
+        return 'call.'.$this->eventType;
     }
 
     /**
-     * Get the data to broadcast
+     * Get the data to broadcast.
      */
     public function broadcastWith(): array
     {
         return [
-            'unique_id' => $this->uniqueId,
+            'unique_id'  => $this->uniqueId,
             'event_type' => $this->eventType,
-            'call_data' => $this->callData,
-            'metadata' => array_merge($this->metadata, [
+            'call_data'  => $this->callData,
+            'metadata'   => array_merge($this->metadata, [
                 'timestamp' => now()->toISOString(),
-                'server' => config('app.name'),
+                'server'    => config('app.name'),
             ]),
             'analytics' => $this->getCallAnalytics(),
         ];
@@ -363,8 +368,8 @@ class EnhancedCallEvent implements ShouldBroadcast
 }
 
 /**
- * Example 4: Service Coordination and Complex Workflows
- * 
+ * Example 4: Service Coordination and Complex Workflows.
+ *
  * Orchestrator for complex multi-service operations
  */
 class CallWorkflowOrchestrator
@@ -373,19 +378,20 @@ class CallWorkflowOrchestrator
         private AsteriskManagerService $asteriskManager,
         private QueueManagerService $queueManager,
         private EventProcessor $eventProcessor
-    ) {}
+    ) {
+    }
 
     /**
-     * Orchestrate a complex call routing workflow
+     * Orchestrate a complex call routing workflow.
      */
     public function executeSmartRouting(array $callRequest): array
     {
-        $workflowId = 'workflow_' . time() . '_' . mt_rand(1000, 9999);
-        
+        $workflowId = 'workflow_'.time().'_'.mt_rand(1000, 9999);
+
         try {
             Log::info('Starting smart routing workflow', [
-                'workflow_id' => $workflowId,
-                'call_request' => $callRequest
+                'workflow_id'  => $workflowId,
+                'call_request' => $callRequest,
             ]);
 
             // Step 1: Analyze caller and determine routing strategy
@@ -404,16 +410,15 @@ class CallWorkflowOrchestrator
             $this->setupCallMonitoring($executionResult, $workflowId);
 
             return [
-                'success' => true,
-                'workflow_id' => $workflowId,
+                'success'          => true,
+                'workflow_id'      => $workflowId,
                 'routing_decision' => $finalRouting,
-                'execution_result' => $executionResult
+                'execution_result' => $executionResult,
             ];
-
         } catch (\Exception $e) {
             Log::error('Smart routing workflow failed', [
                 'workflow_id' => $workflowId,
-                'error' => $e->getMessage()
+                'error'       => $e->getMessage(),
             ]);
 
             // Execute fallback routing
@@ -424,10 +429,10 @@ class CallWorkflowOrchestrator
     private function determineRoutingStrategy(array $callRequest): array
     {
         $strategy = [
-            'type' => 'standard',
-            'priority' => 'normal',
-            'preferred_queue' => 'general',
-            'skill_requirements' => [],
+            'type'                => 'standard',
+            'priority'            => 'normal',
+            'preferred_queue'     => 'general',
+            'skill_requirements'  => [],
             'language_preference' => 'en',
         ];
 
@@ -460,20 +465,21 @@ class CallWorkflowOrchestrator
             foreach ($queueStatus['members'] as $member => $memberData) {
                 if (!($memberData['paused'] ?? false) && ($memberData['status'] ?? '') === 'available') {
                     $availableAgents[] = [
-                        'member' => $member,
-                        'penalty' => $memberData['penalty'] ?? 0,
+                        'member'      => $member,
+                        'penalty'     => $memberData['penalty'] ?? 0,
                         'calls_taken' => $memberData['callstaken'] ?? 0,
-                        'skills' => $this->getAgentSkills($member),
+                        'skills'      => $this->getAgentSkills($member),
                     ];
                 }
             }
         }
 
         // Sort by penalty (lower is better) and calls taken (for load balancing)
-        usort($availableAgents, function($a, $b) {
+        usort($availableAgents, function ($a, $b) {
             if ($a['penalty'] === $b['penalty']) {
                 return $a['calls_taken'] <=> $b['calls_taken'];
             }
+
             return $a['penalty'] <=> $b['penalty'];
         });
 
@@ -483,20 +489,20 @@ class CallWorkflowOrchestrator
     private function applyBusinessRules(array $strategy, array $availableAgents, array $callRequest): array
     {
         $routing = [
-            'strategy' => $strategy,
+            'strategy'       => $strategy,
             'selected_agent' => null,
             'fallback_queue' => 'general',
-            'timeout' => 30,
-            'max_retries' => 3,
+            'timeout'        => 30,
+            'max_retries'    => 3,
         ];
 
         // Apply priority-based timeout adjustments
-        $routing['timeout'] = match($strategy['priority']) {
+        $routing['timeout'] = match ($strategy['priority']) {
             'critical' => 10,
-            'high' => 20,
-            'normal' => 30,
-            'low' => 45,
-            default => 30
+            'high'     => 20,
+            'normal'   => 30,
+            'low'      => 45,
+            default    => 30
         };
 
         // Select best available agent
@@ -520,10 +526,10 @@ class CallWorkflowOrchestrator
     private function executeRouting(array $routing, array $callRequest): array
     {
         $result = [
-            'routed' => false,
-            'channel' => null,
-            'queue' => null,
-            'agent' => null,
+            'routed'     => false,
+            'channel'    => null,
+            'queue'      => null,
+            'agent'      => null,
             'started_at' => now(),
         ];
 
@@ -531,14 +537,14 @@ class CallWorkflowOrchestrator
             // Direct agent routing if available
             if ($routing['selected_agent']) {
                 $channel = $routing['selected_agent']['member'];
-                
+
                 $callResult = $this->asteriskManager->originateCall(
                     $callRequest['channel'],
                     $channel,
                     [
-                        'Timeout' => $routing['timeout'] * 1000,
+                        'Timeout'  => $routing['timeout'] * 1000,
                         'Priority' => $routing['strategy']['priority'] === 'critical' ? '1' : '2',
-                        'Context' => 'internal',
+                        'Context'  => 'internal',
                     ]
                 );
 
@@ -554,11 +560,10 @@ class CallWorkflowOrchestrator
                 $queueResult = $this->routeToQueue($callRequest, $routing);
                 $result = array_merge($result, $queueResult);
             }
-
         } catch (\Exception $e) {
             Log::error('Routing execution failed', [
                 'routing' => $routing,
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage(),
             ]);
         }
 
@@ -568,11 +573,11 @@ class CallWorkflowOrchestrator
     private function routeToQueue(array $callRequest, array $routing): array
     {
         $queue = $routing['strategy']['preferred_queue'];
-        
+
         // Implementation would depend on specific queue routing logic
         return [
-            'routed' => true,
-            'queue' => $queue,
+            'routed'         => true,
+            'queue'          => $queue,
             'routing_method' => 'queue',
         ];
     }
@@ -596,22 +601,22 @@ class CallWorkflowOrchestrator
         Event::listen(CallConnected::class, function (CallConnected $event) use ($workflowId) {
             Log::info('Workflow call connected', [
                 'workflow_id' => $workflowId,
-                'unique_id' => $event->uniqueId
+                'unique_id'   => $event->uniqueId,
             ]);
         });
 
         Event::listen(CallEnded::class, function (CallEnded $event) use ($workflowId) {
             Log::info('Workflow call ended', [
                 'workflow_id' => $workflowId,
-                'unique_id' => $event->uniqueId,
-                'duration' => $event->duration
+                'unique_id'   => $event->uniqueId,
+                'duration'    => $event->duration,
             ]);
 
             // Queue analytics processing
             Queue::push(new ProcessCallAnalyticsJob($event->uniqueId, [
                 'workflow_id' => $workflowId,
-                'duration' => $event->duration,
-                'cause' => $event->cause,
+                'duration'    => $event->duration,
+                'cause'       => $event->cause,
             ]));
         });
     }
@@ -629,22 +634,21 @@ class CallWorkflowOrchestrator
             );
 
             return [
-                'success' => $result,
-                'workflow_id' => $workflowId,
+                'success'          => $result,
+                'workflow_id'      => $workflowId,
                 'routing_decision' => ['type' => 'fallback', 'queue' => 'general'],
-                'execution_result' => ['routed' => $result, 'routing_method' => 'fallback']
+                'execution_result' => ['routed' => $result, 'routing_method' => 'fallback'],
             ];
-
         } catch (\Exception $e) {
             Log::error('Fallback routing failed', [
                 'workflow_id' => $workflowId,
-                'error' => $e->getMessage()
+                'error'       => $e->getMessage(),
             ]);
 
             return [
-                'success' => false,
+                'success'     => false,
                 'workflow_id' => $workflowId,
-                'error' => 'All routing attempts failed'
+                'error'       => 'All routing attempts failed',
             ];
         }
     }
@@ -653,6 +657,7 @@ class CallWorkflowOrchestrator
     private function isVipCaller(string $callerId): bool
     {
         $vipNumbers = Cache::get('vip_numbers', ['1001', '1002', '9999']);
+
         return in_array(preg_replace('/[^0-9]/', '', $callerId), $vipNumbers);
     }
 
@@ -680,13 +685,17 @@ class CallWorkflowOrchestrator
 }
 
 /**
- * Additional job classes referenced in examples
+ * Additional job classes referenced in examples.
  */
 class SendSatisfactionSurveyJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use SerializesModels;
 
-    public function __construct(private string $callUniqueId) {}
+    public function __construct(private string $callUniqueId)
+    {
+    }
 
     public function handle(): void
     {
@@ -697,9 +706,13 @@ class SendSatisfactionSurveyJob implements ShouldQueue
 
 class ScheduleAgentTrainingJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use SerializesModels;
 
-    public function __construct(private ?string $agentId) {}
+    public function __construct(private ?string $agentId)
+    {
+    }
 
     public function handle(): void
     {
@@ -712,18 +725,21 @@ class ScheduleAgentTrainingJob implements ShouldQueue
 
 class MonitorCallProgressJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use SerializesModels;
 
     public function __construct(
         private string $workflowId,
         private array $executionResult
-    ) {}
+    ) {
+    }
 
     public function handle(): void
     {
         Log::info('Monitoring call progress', [
-            'workflow_id' => $this->workflowId,
-            'execution_result' => $this->executionResult
+            'workflow_id'      => $this->workflowId,
+            'execution_result' => $this->executionResult,
         ]);
         // Implementation would monitor call status and take actions if needed
     }
@@ -731,7 +747,7 @@ class MonitorCallProgressJob implements ShouldQueue
 
 /**
  * Usage Examples:
- * 
+ *
  * // Using middleware in routes
  * Route::middleware([AsteriskConnectionMiddleware::class, AsteriskRateLimitMiddleware::class])
  *     ->group(function () {
@@ -740,13 +756,13 @@ class MonitorCallProgressJob implements ShouldQueue
  *             return $orchestrator->executeSmartRouting($request->all());
  *         });
  *     });
- * 
+ *
  * // Dispatching analytics job
  * ProcessCallAnalyticsJob::dispatch($uniqueId, $callData);
- * 
+ *
  * // Broadcasting enhanced events
  * event(new EnhancedCallEvent('connected', $uniqueId, $callData, $metadata));
- * 
+ *
  * // Bulk queue operations
  * BulkQueueOperationJob::dispatch('add', ['support', 'sales'], ['SIP/1001', 'SIP/1002']);
  */

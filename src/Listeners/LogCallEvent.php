@@ -2,12 +2,12 @@
 
 namespace AsteriskPbxManager\Listeners;
 
+use AsteriskPbxManager\Events\AsteriskEvent;
 use AsteriskPbxManager\Events\CallConnected;
 use AsteriskPbxManager\Events\CallEnded;
-use AsteriskPbxManager\Events\AsteriskEvent;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LogCallEvent implements ShouldQueue
 {
@@ -26,30 +26,30 @@ class LogCallEvent implements ShouldQueue
     {
         try {
             DB::table('asterisk_call_logs')->insert([
-                'channel' => $event->channel,
-                'caller_id' => $event->callerIdNum,
+                'channel'      => $event->channel,
+                'caller_id'    => $event->callerIdNum,
                 'connected_to' => $event->connectedLineNum,
-                'context' => $event->context ?? 'default',
-                'direction' => $this->determineDirection($event->channel),
-                'started_at' => now(),
-                'metadata' => json_encode([
+                'context'      => $event->context ?? 'default',
+                'direction'    => $this->determineDirection($event->channel),
+                'started_at'   => now(),
+                'metadata'     => json_encode([
                     'event_type' => 'call_connected',
-                    'extension' => $event->extension,
-                    'raw_data' => $event->rawData ?? []
+                    'extension'  => $event->extension,
+                    'raw_data'   => $event->rawData ?? [],
                 ]),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
             Log::info('Call connected event logged to database', [
-                'channel' => $event->channel,
-                'caller_id' => $event->callerIdNum,
-                'connected_to' => $event->connectedLineNum
+                'channel'      => $event->channel,
+                'caller_id'    => $event->callerIdNum,
+                'connected_to' => $event->connectedLineNum,
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to log call connected event: ' . $e->getMessage(), [
+            Log::error('Failed to log call connected event: '.$e->getMessage(), [
                 'channel' => $event->channel,
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage(),
             ]);
         }
     }
@@ -65,33 +65,33 @@ class LogCallEvent implements ShouldQueue
                 ->where('channel', $event->channel)
                 ->whereNull('ended_at')
                 ->update([
-                    'ended_at' => now(),
-                    'duration' => $event->duration ?? null,
+                    'ended_at'     => now(),
+                    'duration'     => $event->duration ?? null,
                     'hangup_cause' => $event->cause ?? 'unknown',
-                    'metadata' => DB::raw("JSON_MERGE_PATCH(COALESCE(metadata, '{}'), '" . 
+                    'metadata'     => DB::raw("JSON_MERGE_PATCH(COALESCE(metadata, '{}'), '".
                         json_encode([
-                            'event_type' => 'call_ended',
+                            'event_type'   => 'call_ended',
                             'hangup_cause' => $event->cause ?? 'unknown',
-                            'raw_data' => $event->rawData ?? []
-                        ]) . "')"),
+                            'raw_data'     => $event->rawData ?? [],
+                        ])."')"),
                     'updated_at' => now(),
                 ]);
 
             // If no existing record was updated, create a new one
             if ($updated === 0) {
                 DB::table('asterisk_call_logs')->insert([
-                    'channel' => $event->channel,
-                    'caller_id' => $event->callerIdNum ?? null,
-                    'context' => $event->context ?? 'default',
-                    'direction' => $this->determineDirection($event->channel),
-                    'started_at' => now()->subSeconds($event->duration ?? 0),
-                    'ended_at' => now(),
-                    'duration' => $event->duration ?? null,
+                    'channel'      => $event->channel,
+                    'caller_id'    => $event->callerIdNum ?? null,
+                    'context'      => $event->context ?? 'default',
+                    'direction'    => $this->determineDirection($event->channel),
+                    'started_at'   => now()->subSeconds($event->duration ?? 0),
+                    'ended_at'     => now(),
+                    'duration'     => $event->duration ?? null,
                     'hangup_cause' => $event->cause ?? 'unknown',
-                    'metadata' => json_encode([
-                        'event_type' => 'call_ended',
+                    'metadata'     => json_encode([
+                        'event_type'   => 'call_ended',
                         'hangup_cause' => $event->cause ?? 'unknown',
-                        'raw_data' => $event->rawData ?? []
+                        'raw_data'     => $event->rawData ?? [],
                     ]),
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -99,14 +99,14 @@ class LogCallEvent implements ShouldQueue
             }
 
             Log::info('Call ended event logged to database', [
-                'channel' => $event->channel,
-                'cause' => $event->cause ?? 'unknown',
-                'duration' => $event->duration ?? 0
+                'channel'  => $event->channel,
+                'cause'    => $event->cause ?? 'unknown',
+                'duration' => $event->duration ?? 0,
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to log call ended event: ' . $e->getMessage(), [
+            Log::error('Failed to log call ended event: '.$e->getMessage(), [
                 'channel' => $event->channel,
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage(),
             ]);
         }
     }
@@ -123,24 +123,24 @@ class LogCallEvent implements ShouldQueue
 
         try {
             DB::table('asterisk_events')->insert([
-                'event_name' => $event->eventName,
-                'channel' => $event->channel ?? null,
-                'unique_id' => $event->uniqueId ?? null,
-                'event_data' => json_encode($event->rawData ?? []),
+                'event_name'   => $event->eventName,
+                'channel'      => $event->channel ?? null,
+                'unique_id'    => $event->uniqueId ?? null,
+                'event_data'   => json_encode($event->rawData ?? []),
                 'processed_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
+                'created_at'   => now(),
+                'updated_at'   => now(),
             ]);
 
             Log::debug('Asterisk event logged to database', [
                 'event_name' => $event->eventName,
-                'channel' => $event->channel ?? 'N/A',
-                'unique_id' => $event->uniqueId ?? 'N/A'
+                'channel'    => $event->channel ?? 'N/A',
+                'unique_id'  => $event->uniqueId ?? 'N/A',
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to log Asterisk event: ' . $e->getMessage(), [
+            Log::error('Failed to log Asterisk event: '.$e->getMessage(), [
                 'event_name' => $event->eventName,
-                'error' => $e->getMessage()
+                'error'      => $e->getMessage(),
             ]);
         }
     }
@@ -156,7 +156,7 @@ class LogCallEvent implements ShouldQueue
         } elseif (preg_match('/^(Zap|DAHDI)\//', $channel)) {
             return 'inbound';
         }
-        
+
         return 'unknown';
     }
 
@@ -167,7 +167,7 @@ class LogCallEvent implements ShouldQueue
     {
         return [
             CallConnected::class => 'handleCallConnected',
-            CallEnded::class => 'handleCallEnded',
+            CallEnded::class     => 'handleCallEnded',
             AsteriskEvent::class => 'handleAsteriskEvent',
         ];
     }

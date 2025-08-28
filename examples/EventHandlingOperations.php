@@ -1,22 +1,22 @@
 <?php
 
 /**
- * Event Handling Operations Example
- * 
+ * Event Handling Operations Example.
+ *
  * This example demonstrates event handling operations using the Asterisk PBX Manager package.
  * It shows how to listen for events, create custom listeners, and handle real-time Asterisk events.
  */
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__.'/../vendor/autoload.php';
 
-use AsteriskPbxManager\Services\AsteriskManagerService;
-use AsteriskPbxManager\Services\EventProcessor;
+use AsteriskPbxManager\Events\AsteriskEvent;
 use AsteriskPbxManager\Events\CallConnected;
 use AsteriskPbxManager\Events\CallEnded;
 use AsteriskPbxManager\Events\QueueMemberAdded;
-use AsteriskPbxManager\Events\AsteriskEvent;
-use AsteriskPbxManager\Models\CallLog;
 use AsteriskPbxManager\Models\AsteriskEvent as AsteriskEventModel;
+use AsteriskPbxManager\Models\CallLog;
+use AsteriskPbxManager\Services\AsteriskManagerService;
+use AsteriskPbxManager\Services\EventProcessor;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 
@@ -36,7 +36,7 @@ class EventHandlingExample
     }
 
     /**
-     * Example 1: Register basic event listeners
+     * Example 1: Register basic event listeners.
      */
     public function registerBasicEventListeners(): void
     {
@@ -84,7 +84,7 @@ class EventHandlingExample
     }
 
     /**
-     * Example 2: Register custom event listeners with filtering
+     * Example 2: Register custom event listeners with filtering.
      */
     public function registerFilteredEventListeners(): void
     {
@@ -119,7 +119,7 @@ class EventHandlingExample
     }
 
     /**
-     * Example 3: Register comprehensive Asterisk event listener
+     * Example 3: Register comprehensive Asterisk event listener.
      */
     public function registerComprehensiveEventListener(): void
     {
@@ -129,7 +129,7 @@ class EventHandlingExample
             echo "📡 Asterisk Event: {$event->eventName}\n";
             echo "   Timestamp: {$event->timestamp}\n";
             echo "   Server: {$event->server}\n";
-            
+
             if (!empty($event->data)) {
                 echo "   Data:\n";
                 foreach ($event->data as $key => $value) {
@@ -138,7 +138,7 @@ class EventHandlingExample
             }
             echo "\n";
 
-            $this->trackEvent('asterisk_event_' . strtolower($event->eventName));
+            $this->trackEvent('asterisk_event_'.strtolower($event->eventName));
             $this->storeEventInDatabase($event);
         });
 
@@ -146,12 +146,12 @@ class EventHandlingExample
     }
 
     /**
-     * Example 4: Start real-time event monitoring
+     * Example 4: Start real-time event monitoring.
      */
     public function startEventMonitoring(int $duration = 60): void
     {
         echo "👁️ Starting real-time event monitoring for {$duration} seconds\n";
-        echo "=" . str_repeat("=", 50) . "\n";
+        echo '='.str_repeat('=', 50)."\n";
 
         $startTime = time();
         $endTime = $startTime + $duration;
@@ -187,12 +187,12 @@ class EventHandlingExample
     }
 
     /**
-     * Example 5: Event-driven call workflow
+     * Example 5: Event-driven call workflow.
      */
     public function demonstrateEventDrivenWorkflow(): void
     {
         echo "\n🔄 Demonstrating event-driven call workflow\n";
-        echo "=" . str_repeat("=", 50) . "\n";
+        echo '='.str_repeat('=', 50)."\n";
 
         // Register workflow-specific listeners
         Event::listen(CallConnected::class, [$this, 'handleCallConnectedWorkflow']);
@@ -203,7 +203,7 @@ class EventHandlingExample
 
         // Simulate call connected
         $callConnectedEvent = new CallConnected(
-            'call_' . time() . '_001',
+            'call_'.time().'_001',
             'SIP/1001',
             'John Doe <1001>',
             '2002',
@@ -230,12 +230,12 @@ class EventHandlingExample
     }
 
     /**
-     * Example 6: Custom event processing and analytics
+     * Example 6: Custom event processing and analytics.
      */
     public function demonstrateEventAnalytics(): void
     {
         echo "📊 Demonstrating event analytics\n";
-        echo "=" . str_repeat("=", 50) . "\n";
+        echo '='.str_repeat('=', 50)."\n";
 
         // Simulate some events for analytics
         $this->simulateAnalyticsData();
@@ -247,7 +247,7 @@ class EventHandlingExample
     }
 
     /**
-     * Handle call connected workflow
+     * Handle call connected workflow.
      */
     public function handleCallConnectedWorkflow(CallConnected $event): void
     {
@@ -257,10 +257,10 @@ class EventHandlingExample
 
         // Store call start information
         $this->callEvents[$event->uniqueId] = [
-            'start_time' => $event->connectedAt,
-            'caller_id' => $event->callerId,
+            'start_time'  => $event->connectedAt,
+            'caller_id'   => $event->callerId,
             'destination' => $event->destination,
-            'channel' => $event->channel,
+            'channel'     => $event->channel,
         ];
 
         // Trigger any workflow actions
@@ -276,7 +276,7 @@ class EventHandlingExample
     }
 
     /**
-     * Handle call ended workflow
+     * Handle call ended workflow.
      */
     public function handleCallEndedWorkflow(CallEnded $event): void
     {
@@ -286,7 +286,7 @@ class EventHandlingExample
 
         if (isset($this->callEvents[$event->uniqueId])) {
             $callData = $this->callEvents[$event->uniqueId];
-            
+
             // Calculate additional metrics
             $efficiency = $this->calculateCallEfficiency($callData, $event);
             echo "   Efficiency Score: {$efficiency}%\n";
@@ -307,7 +307,7 @@ class EventHandlingExample
     }
 
     /**
-     * Track event occurrence
+     * Track event occurrence.
      */
     private function trackEvent(string $eventType): void
     {
@@ -318,18 +318,18 @@ class EventHandlingExample
     }
 
     /**
-     * Log call event to database
+     * Log call event to database.
      */
     private function logCallEvent(CallConnected $event): void
     {
         try {
             CallLog::create([
-                'unique_id' => $event->uniqueId,
-                'channel' => $event->channel,
-                'caller_id' => $event->callerId,
-                'destination' => $event->destination,
+                'unique_id'    => $event->uniqueId,
+                'channel'      => $event->channel,
+                'caller_id'    => $event->callerId,
+                'destination'  => $event->destination,
                 'connected_at' => $event->connectedAt,
-                'status' => 'connected',
+                'status'       => 'connected',
             ]);
         } catch (\Exception $e) {
             echo "⚠️ Failed to log call event: {$e->getMessage()}\n";
@@ -337,7 +337,7 @@ class EventHandlingExample
     }
 
     /**
-     * Update call log when call ends
+     * Update call log when call ends.
      */
     private function updateCallLog(CallEnded $event): void
     {
@@ -346,8 +346,8 @@ class EventHandlingExample
                    ->update([
                        'ended_at' => $event->endedAt,
                        'duration' => $event->duration,
-                       'cause' => $event->cause,
-                       'status' => 'completed',
+                       'cause'    => $event->cause,
+                       'status'   => 'completed',
                    ]);
         } catch (\Exception $e) {
             echo "⚠️ Failed to update call log: {$e->getMessage()}\n";
@@ -355,16 +355,16 @@ class EventHandlingExample
     }
 
     /**
-     * Store event in database
+     * Store event in database.
      */
     private function storeEventInDatabase(AsteriskEvent $event): void
     {
         try {
             AsteriskEventModel::create([
                 'event_name' => $event->eventName,
-                'server' => $event->server,
-                'timestamp' => $event->timestamp,
-                'data' => json_encode($event->data),
+                'server'     => $event->server,
+                'timestamp'  => $event->timestamp,
+                'data'       => json_encode($event->data),
             ]);
         } catch (\Exception $e) {
             echo "⚠️ Failed to store event: {$e->getMessage()}\n";
@@ -372,13 +372,13 @@ class EventHandlingExample
     }
 
     /**
-     * Simulate random event for demonstration
+     * Simulate random event for demonstration.
      */
     private function simulateRandomEvent(): void
     {
         $events = ['Dial', 'Hangup', 'Bridge', 'QueueMemberAdded', 'QueueMemberRemoved'];
         $eventName = $events[array_rand($events)];
-        
+
         $event = new AsteriskEvent(
             $eventName,
             'localhost',
@@ -390,36 +390,36 @@ class EventHandlingExample
     }
 
     /**
-     * Generate sample event data
+     * Generate sample event data.
      */
     private function generateEventData(string $eventName): array
     {
         $baseData = [
-            'Event' => $eventName,
+            'Event'     => $eventName,
             'Privilege' => 'call,all',
-            'Channel' => 'SIP/' . rand(1001, 1010),
-            'UniqueID' => time() . '.' . rand(100, 999),
+            'Channel'   => 'SIP/'.rand(1001, 1010),
+            'UniqueID'  => time().'.'.rand(100, 999),
         ];
 
         switch ($eventName) {
             case 'Dial':
                 return array_merge($baseData, [
-                    'Destination' => 'SIP/' . rand(2001, 2010),
-                    'CallerIDNum' => rand(1001, 1010),
+                    'Destination'  => 'SIP/'.rand(2001, 2010),
+                    'CallerIDNum'  => rand(1001, 1010),
                     'CallerIDName' => 'Test User',
                 ]);
 
             case 'Hangup':
                 return array_merge($baseData, [
-                    'Cause' => rand(1, 10) === 1 ? 'Busy' : 'Normal Clearing',
+                    'Cause'    => rand(1, 10) === 1 ? 'Busy' : 'Normal Clearing',
                     'Duration' => rand(10, 300),
                 ]);
 
             case 'QueueMemberAdded':
                 return array_merge($baseData, [
-                    'Queue' => ['support', 'sales', 'technical'][rand(0, 2)],
-                    'Location' => $baseData['Channel'],
-                    'MemberName' => 'Agent ' . rand(1, 10),
+                    'Queue'      => ['support', 'sales', 'technical'][rand(0, 2)],
+                    'Location'   => $baseData['Channel'],
+                    'MemberName' => 'Agent '.rand(1, 10),
                 ]);
 
             default:
@@ -428,12 +428,13 @@ class EventHandlingExample
     }
 
     /**
-     * Display current event statistics
+     * Display current event statistics.
      */
     private function displayEventStatistics(): void
     {
         if (empty($this->eventCounts)) {
             echo "   No events processed yet\n\n";
+
             return;
         }
 
@@ -445,15 +446,16 @@ class EventHandlingExample
     }
 
     /**
-     * Display final statistics
+     * Display final statistics.
      */
     private function displayFinalStatistics(): void
     {
         echo "\n📊 Final Event Statistics:\n";
-        echo "=" . str_repeat("=", 50) . "\n";
+        echo '='.str_repeat('=', 50)."\n";
 
         if (empty($this->eventCounts)) {
             echo "No events were processed during monitoring period.\n";
+
             return;
         }
 
@@ -470,7 +472,7 @@ class EventHandlingExample
     }
 
     /**
-     * Simulate analytics data
+     * Simulate analytics data.
      */
     private function simulateAnalyticsData(): void
     {
@@ -485,13 +487,13 @@ class EventHandlingExample
     }
 
     /**
-     * Generate call analytics
+     * Generate call analytics.
      */
     private function generateCallAnalytics(): void
     {
         echo "📞 Call Analytics Report:\n";
-        echo "-" . str_repeat("-", 30) . "\n";
-        
+        echo '-'.str_repeat('-', 30)."\n";
+
         $callConnected = $this->eventCounts['call_connected'] ?? 0;
         $callEnded = $this->eventCounts['call_ended'] ?? 0;
         $longCalls = $this->eventCounts['long_call_ended'] ?? 0;
@@ -499,7 +501,7 @@ class EventHandlingExample
         echo "Total Calls Connected: {$callConnected}\n";
         echo "Total Calls Ended: {$callEnded}\n";
         echo "Long Duration Calls: {$longCalls}\n";
-        
+
         if ($callEnded > 0) {
             $completionRate = round(($callEnded / max($callConnected, 1)) * 100, 2);
             echo "Call Completion Rate: {$completionRate}%\n";
@@ -509,13 +511,13 @@ class EventHandlingExample
     }
 
     /**
-     * Generate queue analytics
+     * Generate queue analytics.
      */
     private function generateQueueAnalytics(): void
     {
         echo "👥 Queue Analytics Report:\n";
-        echo "-" . str_repeat("-", 30) . "\n";
-        
+        echo '-'.str_repeat('-', 30)."\n";
+
         $queueMembers = $this->eventCounts['queue_member_added'] ?? 0;
         $priorityMembers = $this->eventCounts['priority_queue_member_added'] ?? 0;
 
@@ -531,35 +533,37 @@ class EventHandlingExample
     }
 
     /**
-     * Generate system analytics
+     * Generate system analytics.
      */
     private function generateSystemAnalytics(): void
     {
         echo "🖥️ System Analytics Report:\n";
-        echo "-" . str_repeat("-", 30) . "\n";
-        
+        echo '-'.str_repeat('-', 30)."\n";
+
         $totalEvents = array_sum($this->eventCounts);
         $eventTypes = count($this->eventCounts);
 
         echo "Total System Events: {$totalEvents}\n";
         echo "Event Types Processed: {$eventTypes}\n";
-        echo "Average Events per Type: " . round($totalEvents / max($eventTypes, 1), 2) . "\n";
+        echo 'Average Events per Type: '.round($totalEvents / max($eventTypes, 1), 2)."\n";
 
         echo "\n";
     }
 
     /**
-     * Helper methods
+     * Helper methods.
      */
     private function isVipCaller(string $callerId): bool
     {
         $vipNumbers = ['1001', '1002', '9999'];
+
         return in_array(preg_replace('/[^0-9]/', '', $callerId), $vipNumbers);
     }
 
     private function isEmergencyNumber(string $destination): bool
     {
         $emergencyNumbers = ['911', '999', '112'];
+
         return in_array($destination, $emergencyNumbers);
     }
 
@@ -567,7 +571,7 @@ class EventHandlingExample
     {
         // Simple efficiency calculation based on duration and cause
         $baseScore = min($event->duration / 60, 5) * 20; // Up to 100 for 5+ minutes
-        
+
         if ($event->cause === 'Normal Clearing') {
             $baseScore += 20;
         }
@@ -578,7 +582,7 @@ class EventHandlingExample
     private function handleLongCall(CallEnded $event): void
     {
         echo "📊 Long call analysis for {$event->uniqueId}:\n";
-        echo "   Duration: " . gmdate("H:i:s", $event->duration) . "\n";
+        echo '   Duration: '.gmdate('H:i:s', $event->duration)."\n";
         echo "   Suggested actions: Review call quality, customer satisfaction survey\n";
     }
 }
@@ -586,24 +590,23 @@ class EventHandlingExample
 // Usage example when running as script
 if (php_sapi_name() === 'cli') {
     echo "Asterisk PBX Manager - Event Handling Example\n";
-    echo "=" . str_repeat("=", 50) . "\n";
+    echo '='.str_repeat('=', 50)."\n";
 
     try {
         // Note: In a real Laravel application, these would be injected
         $asteriskManager = app(AsteriskManagerService::class);
         $eventProcessor = app(EventProcessor::class);
-        
+
         $example = new EventHandlingExample($asteriskManager, $eventProcessor);
-        
+
         // Run demonstrations
         $example->demonstrateEventDrivenWorkflow();
         $example->demonstrateEventAnalytics();
-        
+
         // Start monitoring (uncomment for real-time monitoring)
         // $example->startEventMonitoring(30);
-        
     } catch (\Exception $e) {
-        echo "❌ Failed to initialize example: " . $e->getMessage() . "\n";
+        echo '❌ Failed to initialize example: '.$e->getMessage()."\n";
         exit(1);
     }
 }

@@ -2,10 +2,10 @@
 
 namespace AsteriskPbxManager\Tests\Integration;
 
-use Orchestra\Testbench\TestCase;
 use AsteriskPbxManager\AsteriskPbxManagerServiceProvider;
 use AsteriskPbxManager\Services\AsteriskManagerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Orchestra\Testbench\TestCase;
 
 /**
  * Base test case for integration tests.
@@ -20,7 +20,7 @@ abstract class IntegrationTestCase extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Additional setup for integration tests
         $this->setUpDatabase();
     }
@@ -29,6 +29,7 @@ abstract class IntegrationTestCase extends TestCase
      * Get package providers.
      *
      * @param \Illuminate\Foundation\Application $app
+     *
      * @return array
      */
     protected function getPackageProviders($app): array
@@ -42,6 +43,7 @@ abstract class IntegrationTestCase extends TestCase
      * Get package aliases.
      *
      * @param \Illuminate\Foundation\Application $app
+     *
      * @return array
      */
     protected function getPackageAliases($app): array
@@ -55,6 +57,7 @@ abstract class IntegrationTestCase extends TestCase
      * Define environment setup.
      *
      * @param \Illuminate\Foundation\Application $app
+     *
      * @return void
      */
     protected function getEnvironmentSetUp($app): void
@@ -62,9 +65,9 @@ abstract class IntegrationTestCase extends TestCase
         // Setup the database configuration
         $app['config']->set('database.default', 'testbench');
         $app['config']->set('database.connections.testbench', [
-            'driver' => 'sqlite',
+            'driver'   => 'sqlite',
             'database' => ':memory:',
-            'prefix' => '',
+            'prefix'   => '',
         ]);
 
         // Setup cache configuration
@@ -78,30 +81,30 @@ abstract class IntegrationTestCase extends TestCase
 
         // Setup Asterisk package configuration for testing
         $app['config']->set('asterisk-pbx-manager.connection', [
-            'host' => '127.0.0.1',
-            'port' => 5038,
-            'username' => 'testuser',
-            'secret' => 'testsecret',
+            'host'            => '127.0.0.1',
+            'port'            => 5038,
+            'username'        => 'testuser',
+            'secret'          => 'testsecret',
             'connect_timeout' => 10,
-            'read_timeout' => 10,
-            'scheme' => 'tcp://',
+            'read_timeout'    => 10,
+            'scheme'          => 'tcp://',
         ]);
 
         $app['config']->set('asterisk-pbx-manager.events', [
-            'enabled' => true,
-            'broadcast' => false, // Disable for testing
+            'enabled'         => true,
+            'broadcast'       => false, // Disable for testing
             'log_to_database' => false, // Disable for testing
         ]);
 
         $app['config']->set('asterisk-pbx-manager.logging', [
             'enabled' => false, // Disable for testing
-            'level' => 'debug',
+            'level'   => 'debug',
             'channel' => 'default',
         ]);
 
         $app['config']->set('asterisk-pbx-manager.reconnection', [
-            'enabled' => true,
-            'max_attempts' => 3,
+            'enabled'       => true,
+            'max_attempts'  => 3,
             'delay_seconds' => 1, // Faster for testing
         ]);
     }
@@ -133,7 +136,7 @@ abstract class IntegrationTestCase extends TestCase
     protected function assertFacadeWorks(): void
     {
         $this->assertTrue(class_exists(\AsteriskPbxManager\Facades\AsteriskManager::class));
-        
+
         // Test facade registration by checking if it resolves to the correct service
         $facade = new \AsteriskPbxManager\Facades\AsteriskManager();
         $this->assertInstanceOf(
@@ -151,7 +154,7 @@ abstract class IntegrationTestCase extends TestCase
         $this->assertIsArray(config('asterisk-pbx-manager.connection'));
         $this->assertIsArray(config('asterisk-pbx-manager.events'));
         $this->assertIsArray(config('asterisk-pbx-manager.logging'));
-        
+
         // Check specific configuration values
         $this->assertEquals('127.0.0.1', config('asterisk-pbx-manager.connection.host'));
         $this->assertEquals(5038, config('asterisk-pbx-manager.connection.port'));
@@ -174,6 +177,7 @@ abstract class IntegrationTestCase extends TestCase
      * Mock the PAMI client in the container.
      *
      * @param \Mockery\MockInterface|null $mockClient
+     *
      * @return \Mockery\MockInterface
      */
     protected function mockPamiClient(?\Mockery\MockInterface $mockClient = null): \Mockery\MockInterface
@@ -183,7 +187,7 @@ abstract class IntegrationTestCase extends TestCase
         }
 
         $this->app->instance(\PAMI\Client\Impl\ClientImpl::class, $mockClient);
-        
+
         return $mockClient;
     }
 
@@ -201,7 +205,8 @@ abstract class IntegrationTestCase extends TestCase
      * Create a mock event for testing.
      *
      * @param string $eventName
-     * @param array $keys
+     * @param array  $keys
+     *
      * @return \Mockery\MockInterface
      */
     protected function createMockEvent(string $eventName = 'TestEvent', array $keys = []): \Mockery\MockInterface
@@ -209,21 +214,22 @@ abstract class IntegrationTestCase extends TestCase
         $event = \Mockery::mock(\PAMI\Message\Event\EventMessage::class);
         $event->shouldReceive('getEventName')->andReturn($eventName);
         $event->shouldReceive('getKeys')->andReturn($keys);
-        
+
         // Mock getKey method to return specific values
         $event->shouldReceive('getKey')->andReturnUsing(function ($key) use ($keys) {
             return $keys[$key] ?? null;
         });
-        
+
         return $event;
     }
 
     /**
      * Create a mock response for testing.
      *
-     * @param bool $success
+     * @param bool        $success
      * @param string|null $message
-     * @param array $keys
+     * @param array       $keys
+     *
      * @return \Mockery\MockInterface
      */
     protected function createMockResponse(bool $success = true, ?string $message = null, array $keys = []): \Mockery\MockInterface
@@ -232,7 +238,7 @@ abstract class IntegrationTestCase extends TestCase
         $response->shouldReceive('isSuccess')->andReturn($success);
         $response->shouldReceive('getMessage')->andReturn($message);
         $response->shouldReceive('getKeys')->andReturn($keys);
-        
+
         return $response;
     }
 
@@ -240,12 +246,12 @@ abstract class IntegrationTestCase extends TestCase
      * Simulate an Asterisk event.
      *
      * @param string $eventName
-     * @param array $data
+     * @param array  $data
      */
     protected function simulateEvent(string $eventName, array $data = []): void
     {
         $event = $this->createMockEvent($eventName, $data);
-        
+
         // Fire the event through Laravel's event system
         switch ($eventName) {
             case 'Dial':

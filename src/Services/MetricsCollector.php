@@ -2,22 +2,18 @@
 
 namespace AsteriskPbxManager\Services;
 
-use AsteriskPbxManager\Services\ConnectionPoolManager;
-use AsteriskPbxManager\Services\HealthCheckService;
-use AsteriskPbxManager\Models\CallLog;
 use AsteriskPbxManager\Models\AsteriskEvent;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
+use AsteriskPbxManager\Models\CallLog;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Metrics Collector Service for Asterisk PBX Manager.
- * 
+ *
  * Centralized metrics collection and reporting system that gathers
  * performance indicators, operational metrics, and system statistics
  * from all components of the Asterisk PBX Manager package.
- * 
- * @package AsteriskPbxManager\Services
+ *
  * @author Asterisk PBX Manager Team
  */
 class MetricsCollector
@@ -43,10 +39,10 @@ class MetricsCollector
      * @var array
      */
     protected array $metrics = [
-        'counters' => [],
-        'gauges' => [],
+        'counters'   => [],
+        'gauges'     => [],
         'histograms' => [],
-        'summaries' => [],
+        'summaries'  => [],
     ];
 
     /**
@@ -81,7 +77,7 @@ class MetricsCollector
      * Create a new Metrics Collector instance.
      *
      * @param ConnectionPoolManager|null $poolManager
-     * @param HealthCheckService|null $healthService
+     * @param HealthCheckService|null    $healthService
      */
     public function __construct(
         ?ConnectionPoolManager $poolManager = null,
@@ -106,7 +102,7 @@ class MetricsCollector
         $this->defineCounter('ami_actions_total', 'Total number of AMI actions executed', ['action_type', 'status']);
         $this->defineCounter('ami_connections_total', 'Total number of AMI connections made', ['status']);
         $this->defineCounter('ami_disconnections_total', 'Total number of AMI disconnections', ['reason']);
-        
+
         // Event Processing Counters
         $this->defineCounter('events_processed_total', 'Total number of events processed', ['event_type']);
         $this->defineCounter('events_broadcast_total', 'Total number of events broadcast', ['channel']);
@@ -146,15 +142,16 @@ class MetricsCollector
      *
      * @param string $name
      * @param string $description
-     * @param array $labels
+     * @param array  $labels
+     *
      * @return void
      */
     public function defineCounter(string $name, string $description, array $labels = []): void
     {
         $this->metadata[$name] = [
-            'type' => self::METRIC_TYPE_COUNTER,
+            'type'        => self::METRIC_TYPE_COUNTER,
             'description' => $description,
-            'labels' => $labels,
+            'labels'      => $labels,
         ];
 
         if (!isset($this->metrics['counters'][$name])) {
@@ -167,15 +164,16 @@ class MetricsCollector
      *
      * @param string $name
      * @param string $description
-     * @param array $labels
+     * @param array  $labels
+     *
      * @return void
      */
     public function defineGauge(string $name, string $description, array $labels = []): void
     {
         $this->metadata[$name] = [
-            'type' => self::METRIC_TYPE_GAUGE,
+            'type'        => self::METRIC_TYPE_GAUGE,
             'description' => $description,
-            'labels' => $labels,
+            'labels'      => $labels,
         ];
 
         if (!isset($this->metrics['gauges'][$name])) {
@@ -188,21 +186,22 @@ class MetricsCollector
      *
      * @param string $name
      * @param string $description
-     * @param array $buckets
+     * @param array  $buckets
+     *
      * @return void
      */
     public function defineHistogram(string $name, string $description, array $buckets): void
     {
         $this->metadata[$name] = [
-            'type' => self::METRIC_TYPE_HISTOGRAM,
+            'type'        => self::METRIC_TYPE_HISTOGRAM,
             'description' => $description,
-            'buckets' => $buckets,
+            'buckets'     => $buckets,
         ];
 
         if (!isset($this->metrics['histograms'][$name])) {
             $this->metrics['histograms'][$name] = [
-                'count' => 0,
-                'sum' => 0,
+                'count'   => 0,
+                'sum'     => 0,
                 'buckets' => array_fill_keys(array_map('strval', $buckets), 0),
             ];
         }
@@ -212,20 +211,21 @@ class MetricsCollector
      * Increment a counter metric.
      *
      * @param string $name
-     * @param int $value
-     * @param array $labels
+     * @param int    $value
+     * @param array  $labels
+     *
      * @return void
      */
     public function incrementCounter(string $name, int $value = 1, array $labels = []): void
     {
         $key = $this->buildMetricKey($name, $labels);
-        
+
         if (!isset($this->metrics['counters'][$key])) {
             $this->metrics['counters'][$key] = 0;
         }
-        
+
         $this->metrics['counters'][$key] += $value;
-        
+
         if ($this->config['log_metrics'] ?? false) {
             Log::debug("Counter incremented: {$key} += {$value}");
         }
@@ -235,15 +235,16 @@ class MetricsCollector
      * Set a gauge metric value.
      *
      * @param string $name
-     * @param float $value
-     * @param array $labels
+     * @param float  $value
+     * @param array  $labels
+     *
      * @return void
      */
     public function setGauge(string $name, float $value, array $labels = []): void
     {
         $key = $this->buildMetricKey($name, $labels);
         $this->metrics['gauges'][$key] = $value;
-        
+
         if ($this->config['log_metrics'] ?? false) {
             Log::debug("Gauge set: {$key} = {$value}");
         }
@@ -253,35 +254,36 @@ class MetricsCollector
      * Observe a value for a histogram metric.
      *
      * @param string $name
-     * @param float $value
-     * @param array $labels
+     * @param float  $value
+     * @param array  $labels
+     *
      * @return void
      */
     public function observeHistogram(string $name, float $value, array $labels = []): void
     {
         $key = $this->buildMetricKey($name, $labels);
-        
+
         if (!isset($this->metrics['histograms'][$key])) {
             $buckets = $this->metadata[$name]['buckets'] ?? [];
             $this->metrics['histograms'][$key] = [
-                'count' => 0,
-                'sum' => 0,
+                'count'   => 0,
+                'sum'     => 0,
                 'buckets' => array_fill_keys(array_map('strval', $buckets), 0),
             ];
         }
-        
+
         $this->metrics['histograms'][$key]['count']++;
         $this->metrics['histograms'][$key]['sum'] += $value;
-        
+
         // Update buckets
         if (isset($this->metadata[$name]['buckets'])) {
             foreach ($this->metadata[$name]['buckets'] as $bucket) {
                 if ($value <= $bucket) {
-                    $this->metrics['histograms'][$key]['buckets'][(string)$bucket]++;
+                    $this->metrics['histograms'][$key]['buckets'][(string) $bucket]++;
                 }
             }
         }
-        
+
         if ($this->config['log_metrics'] ?? false) {
             Log::debug("Histogram observed: {$key} = {$value}");
         }
@@ -295,12 +297,12 @@ class MetricsCollector
     public function collectMetrics(): array
     {
         $collectedMetrics = [
-            'timestamp' => now()->toISOString(),
+            'timestamp'      => now()->toISOString(),
             'uptime_seconds' => now()->diffInSeconds($this->startTime),
-            'counters' => $this->metrics['counters'],
-            'gauges' => $this->metrics['gauges'],
-            'histograms' => $this->metrics['histograms'],
-            'summaries' => $this->metrics['summaries'],
+            'counters'       => $this->metrics['counters'],
+            'gauges'         => $this->metrics['gauges'],
+            'histograms'     => $this->metrics['histograms'],
+            'summaries'      => $this->metrics['summaries'],
         ];
 
         // Collect connection pool metrics
@@ -332,6 +334,7 @@ class MetricsCollector
      * Update connection pool metrics.
      *
      * @param array $poolStats
+     *
      * @return void
      */
     protected function updatePoolMetrics(array $poolStats): void
@@ -339,7 +342,7 @@ class MetricsCollector
         $this->setGauge('connection_pool_size', $poolStats['pool_size'] ?? 0);
         $this->setGauge('connection_pool_active', $poolStats['in_use_connections'] ?? 0);
         $this->setGauge('connection_pool_idle', $poolStats['available_connections'] ?? 0);
-        
+
         // Update counters from pool stats
         $this->setGauge('ami_connections_active', $poolStats['current_active'] ?? 0);
     }
@@ -348,12 +351,13 @@ class MetricsCollector
      * Update health check metrics.
      *
      * @param array $healthData
+     *
      * @return void
      */
     protected function updateHealthMetrics(array $healthData): void
     {
         $this->setGauge('health_check_status', $healthData['healthy'] ? 1 : 0);
-        
+
         // If we have execution time from detailed health check
         if (isset($healthData['execution_time'])) {
             $this->setGauge('health_checks_execution_time_ms', $healthData['execution_time']);
@@ -370,7 +374,7 @@ class MetricsCollector
         // Memory usage
         $memoryUsage = memory_get_usage(true);
         $this->setGauge('system_memory_usage_mb', round($memoryUsage / 1024 / 1024, 2));
-        
+
         // Peak memory usage
         $peakMemory = memory_get_peak_usage(true);
         $this->setGauge('system_peak_memory_usage_mb', round($peakMemory / 1024 / 1024, 2));
@@ -387,18 +391,17 @@ class MetricsCollector
             // Call logs count
             $callLogsCount = CallLog::count();
             $this->setGauge('database_call_logs_total', $callLogsCount);
-            
+
             // Events count
             $eventsCount = AsteriskEvent::count();
             $this->setGauge('database_events_total', $eventsCount);
-            
+
             // Recent activity (last hour)
             $recentCalls = CallLog::where('created_at', '>=', now()->subHour())->count();
             $this->setGauge('database_recent_calls_1h', $recentCalls);
-            
+
             $recentEvents = AsteriskEvent::where('created_at', '>=', now()->subHour())->count();
             $this->setGauge('database_recent_events_1h', $recentEvents);
-            
         } catch (\Exception $e) {
             Log::warning('Failed to collect database metrics', ['error' => $e->getMessage()]);
         }
@@ -413,23 +416,23 @@ class MetricsCollector
     {
         $metrics = $this->collectMetrics();
         $output = [];
-        
+
         // Add metadata comments
         foreach ($this->metadata as $name => $meta) {
             $output[] = "# HELP {$name} {$meta['description']}";
             $output[] = "# TYPE {$name} {$meta['type']}";
         }
-        
+
         // Export counters
         foreach ($metrics['counters'] as $name => $value) {
             $output[] = "{$name} {$value}";
         }
-        
+
         // Export gauges
         foreach ($metrics['gauges'] as $name => $value) {
             $output[] = "{$name} {$value}";
         }
-        
+
         // Export histograms
         foreach ($metrics['histograms'] as $name => $data) {
             foreach ($data['buckets'] as $bucket => $count) {
@@ -438,7 +441,7 @@ class MetricsCollector
             $output[] = "{$name}_count {$data['count']}";
             $output[] = "{$name}_sum {$data['sum']}";
         }
-        
+
         return implode("\n", $output);
     }
 
@@ -450,9 +453,9 @@ class MetricsCollector
     public function exportJson(): array
     {
         return [
-            'metadata' => $this->metadata,
-            'metrics' => $this->collectMetrics(),
-            'export_time' => now()->toISOString(),
+            'metadata'         => $this->metadata,
+            'metrics'          => $this->collectMetrics(),
+            'export_time'      => now()->toISOString(),
             'collector_uptime' => now()->diffInSeconds($this->startTime),
         ];
     }
@@ -465,31 +468,31 @@ class MetricsCollector
     public function getSummaryReport(): array
     {
         $metrics = $this->collectMetrics();
-        
+
         $summary = [
             'system' => [
-                'uptime_seconds' => $metrics['uptime_seconds'],
+                'uptime_seconds'  => $metrics['uptime_seconds'],
                 'memory_usage_mb' => $metrics['gauges']['system_memory_usage_mb'] ?? 0,
-                'health_status' => ($metrics['gauges']['health_check_status'] ?? 0) ? 'healthy' : 'unhealthy',
+                'health_status'   => ($metrics['gauges']['health_check_status'] ?? 0) ? 'healthy' : 'unhealthy',
             ],
             'connections' => [
-                'pool_size' => $metrics['gauges']['connection_pool_size'] ?? 0,
+                'pool_size'          => $metrics['gauges']['connection_pool_size'] ?? 0,
                 'active_connections' => $metrics['gauges']['connection_pool_active'] ?? 0,
-                'idle_connections' => $metrics['gauges']['connection_pool_idle'] ?? 0,
+                'idle_connections'   => $metrics['gauges']['connection_pool_idle'] ?? 0,
             ],
             'operations' => [
-                'total_ami_actions' => array_sum($this->getCountersByPrefix('ami_actions_total')),
+                'total_ami_actions'      => array_sum($this->getCountersByPrefix('ami_actions_total')),
                 'total_events_processed' => array_sum($this->getCountersByPrefix('events_processed_total')),
                 'total_calls_originated' => $metrics['counters']['calls_originated_total'] ?? 0,
             ],
             'database' => [
-                'total_call_logs' => $metrics['gauges']['database_call_logs_total'] ?? 0,
-                'total_events' => $metrics['gauges']['database_events_total'] ?? 0,
-                'recent_calls_1h' => $metrics['gauges']['database_recent_calls_1h'] ?? 0,
+                'total_call_logs'  => $metrics['gauges']['database_call_logs_total'] ?? 0,
+                'total_events'     => $metrics['gauges']['database_events_total'] ?? 0,
+                'recent_calls_1h'  => $metrics['gauges']['database_recent_calls_1h'] ?? 0,
                 'recent_events_1h' => $metrics['gauges']['database_recent_events_1h'] ?? 0,
             ],
         ];
-        
+
         return $summary;
     }
 
@@ -497,8 +500,9 @@ class MetricsCollector
      * Record AMI action execution metrics.
      *
      * @param string $action
-     * @param bool $success
-     * @param float $duration
+     * @param bool   $success
+     * @param float  $duration
+     *
      * @return void
      */
     public function recordAmiAction(string $action, bool $success, float $duration): void
@@ -512,7 +516,8 @@ class MetricsCollector
      * Record event processing metrics.
      *
      * @param string $eventType
-     * @param float $duration
+     * @param float  $duration
+     *
      * @return void
      */
     public function recordEventProcessing(string $eventType, float $duration): void
@@ -524,8 +529,9 @@ class MetricsCollector
     /**
      * Record connection pool acquisition metrics.
      *
-     * @param bool $fromPool
+     * @param bool  $fromPool
      * @param float $duration
+     *
      * @return void
      */
     public function recordConnectionAcquisition(bool $fromPool, float $duration): void
@@ -538,7 +544,8 @@ class MetricsCollector
      * Build metric key with labels.
      *
      * @param string $name
-     * @param array $labels
+     * @param array  $labels
+     *
      * @return string
      */
     protected function buildMetricKey(string $name, array $labels): string
@@ -546,13 +553,13 @@ class MetricsCollector
         if (empty($labels)) {
             return $name;
         }
-        
+
         $labelString = implode(',', array_map(
-            fn($k, $v) => "{$k}=\"{$v}\"",
+            fn ($k, $v) => "{$k}=\"{$v}\"",
             array_keys($labels),
             array_values($labels)
         ));
-        
+
         return "{$name}{{$labelString}}";
     }
 
@@ -560,13 +567,14 @@ class MetricsCollector
      * Get counters by prefix.
      *
      * @param string $prefix
+     *
      * @return array
      */
     protected function getCountersByPrefix(string $prefix): array
     {
         return array_filter(
             $this->metrics['counters'],
-            fn($key) => strpos($key, $prefix) === 0,
+            fn ($key) => strpos($key, $prefix) === 0,
             ARRAY_FILTER_USE_KEY
         );
     }
@@ -579,12 +587,12 @@ class MetricsCollector
     public function reset(): void
     {
         $this->metrics = [
-            'counters' => [],
-            'gauges' => [],
+            'counters'   => [],
+            'gauges'     => [],
             'histograms' => [],
-            'summaries' => [],
+            'summaries'  => [],
         ];
-        
+
         $this->initializeMetrics();
         $this->startTime = now();
     }

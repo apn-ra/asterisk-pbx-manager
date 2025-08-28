@@ -2,21 +2,20 @@
 
 namespace AsteriskPbxManager\Services;
 
-use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
-use AsteriskPbxManager\Models\AmiAuditLog;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service for comprehensive audit logging of all AMI actions.
- * 
+ *
  * This service provides detailed audit trails for security, compliance,
  * and debugging purposes, capturing user context, action details,
  * execution results, and security-relevant information.
- * 
- * @package AsteriskPbxManager\Services
+ *
  * @author Asterisk PBX Manager Package
+ *
  * @since 1.0.0
  */
 class AuditLogger
@@ -25,7 +24,7 @@ class AuditLogger
      * Log levels for different types of audit events.
      */
     const LEVEL_INFO = 'info';
-    const LEVEL_WARNING = 'warning';  
+    const LEVEL_WARNING = 'warning';
     const LEVEL_ERROR = 'error';
     const LEVEL_SECURITY = 'security';
 
@@ -57,24 +56,25 @@ class AuditLogger
      * Log the start of an AMI action execution.
      *
      * @param string $executionId Unique execution identifier
-     * @param mixed $action The AMI action object
-     * @param array $options Action execution options
-     * @param array $context Additional context information
+     * @param mixed  $action      The AMI action object
+     * @param array  $options     Action execution options
+     * @param array  $context     Additional context information
+     *
      * @return string Audit log entry ID
      */
     public function logActionStart(string $executionId, $action, array $options = [], array $context = []): string
     {
         $auditData = $this->buildAuditData([
-            'execution_id' => $executionId,
-            'event_type' => 'action_start',
-            'action_class' => get_class($action),
-            'action_name' => $this->extractActionName($action),
-            'options' => $this->sanitizeOptions($options),
-            'user_context' => $this->getUserContext(),
-            'system_context' => $this->getSystemContext(),
+            'execution_id'       => $executionId,
+            'event_type'         => 'action_start',
+            'action_class'       => get_class($action),
+            'action_name'        => $this->extractActionName($action),
+            'options'            => $this->sanitizeOptions($options),
+            'user_context'       => $this->getUserContext(),
+            'system_context'     => $this->getSystemContext(),
             'additional_context' => $context,
-            'level' => self::LEVEL_INFO,
-            'category' => $this->categorizeAction($action),
+            'level'              => self::LEVEL_INFO,
+            'category'           => $this->categorizeAction($action),
         ]);
 
         return $this->writeAuditLog($auditData);
@@ -83,26 +83,27 @@ class AuditLogger
     /**
      * Log the completion of an AMI action execution.
      *
-     * @param string $executionId Unique execution identifier
-     * @param mixed $action The AMI action object
-     * @param array $result Action execution result
-     * @param float $executionTimeMs Execution time in milliseconds
+     * @param string $executionId     Unique execution identifier
+     * @param mixed  $action          The AMI action object
+     * @param array  $result          Action execution result
+     * @param float  $executionTimeMs Execution time in milliseconds
+     *
      * @return string Audit log entry ID
      */
     public function logActionComplete(string $executionId, $action, array $result, float $executionTimeMs): string
     {
         $level = $result['success'] ? self::LEVEL_INFO : self::LEVEL_WARNING;
-        
+
         $auditData = $this->buildAuditData([
-            'execution_id' => $executionId,
-            'event_type' => 'action_complete',
-            'action_class' => get_class($action),
-            'action_name' => $this->extractActionName($action),
-            'success' => $result['success'],
+            'execution_id'      => $executionId,
+            'event_type'        => 'action_complete',
+            'action_class'      => get_class($action),
+            'action_name'       => $this->extractActionName($action),
+            'success'           => $result['success'],
             'execution_time_ms' => $executionTimeMs,
-            'response_data' => $this->sanitizeResponseData($result),
-            'level' => $level,
-            'category' => $this->categorizeAction($action),
+            'response_data'     => $this->sanitizeResponseData($result),
+            'level'             => $level,
+            'category'          => $this->categorizeAction($action),
         ]);
 
         return $this->writeAuditLog($auditData);
@@ -111,26 +112,27 @@ class AuditLogger
     /**
      * Log an AMI action execution failure.
      *
-     * @param string $executionId Unique execution identifier
-     * @param mixed $action The AMI action object
-     * @param \Exception $exception The exception that occurred
-     * @param array $context Additional context information
+     * @param string     $executionId Unique execution identifier
+     * @param mixed      $action      The AMI action object
+     * @param \Exception $exception   The exception that occurred
+     * @param array      $context     Additional context information
+     *
      * @return string Audit log entry ID
      */
     public function logActionFailure(string $executionId, $action, \Exception $exception, array $context = []): string
     {
         $auditData = $this->buildAuditData([
-            'execution_id' => $executionId,
-            'event_type' => 'action_failure',
-            'action_class' => get_class($action),
-            'action_name' => $this->extractActionName($action),
-            'error_message' => $exception->getMessage(),
-            'error_code' => $exception->getCode(),
-            'exception_class' => get_class($exception),
-            'stack_trace' => $this->sanitizeStackTrace($exception->getTraceAsString()),
+            'execution_id'       => $executionId,
+            'event_type'         => 'action_failure',
+            'action_class'       => get_class($action),
+            'action_name'        => $this->extractActionName($action),
+            'error_message'      => $exception->getMessage(),
+            'error_code'         => $exception->getCode(),
+            'exception_class'    => get_class($exception),
+            'stack_trace'        => $this->sanitizeStackTrace($exception->getTraceAsString()),
             'additional_context' => $context,
-            'level' => self::LEVEL_ERROR,
-            'category' => $this->categorizeAction($action),
+            'level'              => self::LEVEL_ERROR,
+            'category'           => $this->categorizeAction($action),
         ]);
 
         return $this->writeAuditLog($auditData);
@@ -140,19 +142,20 @@ class AuditLogger
      * Log a security-related event.
      *
      * @param string $eventType Type of security event
-     * @param array $details Event details
-     * @param string $severity Severity level
+     * @param array  $details   Event details
+     * @param string $severity  Severity level
+     *
      * @return string Audit log entry ID
      */
     public function logSecurityEvent(string $eventType, array $details, string $severity = self::LEVEL_SECURITY): string
     {
         $auditData = $this->buildAuditData([
-            'event_type' => $eventType,
+            'event_type'       => $eventType,
             'security_details' => $details,
-            'user_context' => $this->getUserContext(),
-            'system_context' => $this->getSystemContext(),
-            'level' => $severity,
-            'category' => 'security',
+            'user_context'     => $this->getUserContext(),
+            'system_context'   => $this->getSystemContext(),
+            'level'            => $severity,
+            'category'         => 'security',
         ]);
 
         return $this->writeAuditLog($auditData);
@@ -162,13 +165,14 @@ class AuditLogger
      * Build comprehensive audit data structure.
      *
      * @param array $data Base audit data
+     *
      * @return array Complete audit data structure
      */
     protected function buildAuditData(array $data): array
     {
         return array_merge([
-            'audit_id' => $this->generateAuditId(),
-            'timestamp' => Carbon::now(),
+            'audit_id'   => $this->generateAuditId(),
+            'timestamp'  => Carbon::now(),
             'session_id' => session()->getId() ?? null,
             'request_id' => request()->header('X-Request-ID') ?? null,
             'ip_address' => request()->ip() ?? null,
@@ -184,22 +188,22 @@ class AuditLogger
     protected function getUserContext(): array
     {
         $user = Auth::user();
-        
+
         if (!$user) {
             return [
                 'authenticated' => false,
-                'user_id' => null,
-                'username' => null,
-                'roles' => [],
+                'user_id'       => null,
+                'username'      => null,
+                'roles'         => [],
             ];
         }
 
         return [
             'authenticated' => true,
-            'user_id' => $user->id ?? null,
-            'username' => $user->username ?? $user->email ?? null,
-            'roles' => method_exists($user, 'getRoleNames') ? $user->getRoleNames()->toArray() : [],
-            'permissions' => method_exists($user, 'getAllPermissions') ? 
+            'user_id'       => $user->id ?? null,
+            'username'      => $user->username ?? $user->email ?? null,
+            'roles'         => method_exists($user, 'getRoleNames') ? $user->getRoleNames()->toArray() : [],
+            'permissions'   => method_exists($user, 'getAllPermissions') ?
                 $user->getAllPermissions()->pluck('name')->toArray() : [],
         ];
     }
@@ -212,13 +216,13 @@ class AuditLogger
     protected function getSystemContext(): array
     {
         return [
-            'environment' => app()->environment(),
-            'php_version' => PHP_VERSION,
+            'environment'     => app()->environment(),
+            'php_version'     => PHP_VERSION,
             'laravel_version' => app()->version(),
-            'server_name' => $_SERVER['SERVER_NAME'] ?? null,
-            'process_id' => getmypid(),
-            'memory_usage' => memory_get_usage(true),
-            'memory_peak' => memory_get_peak_usage(true),
+            'server_name'     => $_SERVER['SERVER_NAME'] ?? null,
+            'process_id'      => getmypid(),
+            'memory_usage'    => memory_get_usage(true),
+            'memory_peak'     => memory_get_peak_usage(true),
         ];
     }
 
@@ -226,6 +230,7 @@ class AuditLogger
      * Extract action name from action object.
      *
      * @param mixed $action AMI action object
+     *
      * @return string Action name
      */
     protected function extractActionName($action): string
@@ -233,12 +238,13 @@ class AuditLogger
         if (method_exists($action, 'getAction')) {
             return $action->getAction();
         }
-        
+
         if (method_exists($action, 'getName')) {
             return $action->getName();
         }
-        
+
         $className = get_class($action);
+
         return substr($className, strrpos($className, '\\') + 1);
     }
 
@@ -246,27 +252,28 @@ class AuditLogger
      * Categorize action for classification.
      *
      * @param mixed $action AMI action object
+     *
      * @return string Action category
      */
     protected function categorizeAction($action): string
     {
         $actionName = strtolower($this->extractActionName($action));
-        
+
         $categories = [
-            'originate' => self::CATEGORY_CALL_CONTROL,
-            'hangup' => self::CATEGORY_CALL_CONTROL,
-            'bridge' => self::CATEGORY_CALL_CONTROL,
-            'redirect' => self::CATEGORY_CALL_CONTROL,
-            'queueadd' => self::CATEGORY_QUEUE_MANAGEMENT,
-            'queueremove' => self::CATEGORY_QUEUE_MANAGEMENT,
-            'queuepause' => self::CATEGORY_QUEUE_MANAGEMENT,
+            'originate'    => self::CATEGORY_CALL_CONTROL,
+            'hangup'       => self::CATEGORY_CALL_CONTROL,
+            'bridge'       => self::CATEGORY_CALL_CONTROL,
+            'redirect'     => self::CATEGORY_CALL_CONTROL,
+            'queueadd'     => self::CATEGORY_QUEUE_MANAGEMENT,
+            'queueremove'  => self::CATEGORY_QUEUE_MANAGEMENT,
+            'queuepause'   => self::CATEGORY_QUEUE_MANAGEMENT,
             'queueunpause' => self::CATEGORY_QUEUE_MANAGEMENT,
-            'login' => self::CATEGORY_CONNECTION,
-            'logoff' => self::CATEGORY_CONNECTION,
-            'ping' => self::CATEGORY_MONITORING,
-            'status' => self::CATEGORY_MONITORING,
-            'reload' => self::CATEGORY_SYSTEM,
-            'command' => self::CATEGORY_SYSTEM,
+            'login'        => self::CATEGORY_CONNECTION,
+            'logoff'       => self::CATEGORY_CONNECTION,
+            'ping'         => self::CATEGORY_MONITORING,
+            'status'       => self::CATEGORY_MONITORING,
+            'reload'       => self::CATEGORY_SYSTEM,
+            'command'      => self::CATEGORY_SYSTEM,
         ];
 
         foreach ($categories as $pattern => $category) {
@@ -282,6 +289,7 @@ class AuditLogger
      * Sanitize action options for logging.
      *
      * @param array $options Original options
+     *
      * @return array Sanitized options
      */
     protected function sanitizeOptions(array $options): array
@@ -302,6 +310,7 @@ class AuditLogger
      * Sanitize response data for logging.
      *
      * @param array $result Original result data
+     *
      * @return array Sanitized result data
      */
     protected function sanitizeResponseData(array $result): array
@@ -309,7 +318,7 @@ class AuditLogger
         // Remove potentially sensitive response data
         $sanitized = $result;
         unset($sanitized['response']); // Remove raw response object
-        
+
         return $sanitized;
     }
 
@@ -317,6 +326,7 @@ class AuditLogger
      * Sanitize stack trace for logging.
      *
      * @param string $stackTrace Original stack trace
+     *
      * @return string Sanitized stack trace
      */
     protected function sanitizeStackTrace(string $stackTrace): string
@@ -324,11 +334,11 @@ class AuditLogger
         // Remove sensitive file paths and keep only relevant parts
         $lines = explode("\n", $stackTrace);
         $sanitized = [];
-        
+
         foreach (array_slice($lines, 0, 10) as $line) { // Limit to first 10 lines
             $sanitized[] = preg_replace('/\/[^\/]*\/[^\/]*\//', '/.../', $line);
         }
-        
+
         return implode("\n", $sanitized);
     }
 
@@ -336,6 +346,7 @@ class AuditLogger
      * Write audit log entry.
      *
      * @param array $auditData Complete audit data
+     *
      * @return string Audit log entry ID
      */
     protected function writeAuditLog(array $auditData): string
@@ -355,13 +366,12 @@ class AuditLogger
             if ($this->config['external_audit_url'] ?? null) {
                 $this->sendExternalAuditLog($auditData);
             }
-
         } catch (\Exception $e) {
             // Fallback logging if audit logging fails
             Log::error('Audit logging failed', [
-                'audit_id' => $auditId,
-                'error' => $e->getMessage(),
-                'original_data' => $auditData
+                'audit_id'      => $auditId,
+                'error'         => $e->getMessage(),
+                'original_data' => $auditData,
             ]);
         }
 
@@ -372,31 +382,32 @@ class AuditLogger
      * Store audit log in database.
      *
      * @param array $auditData Audit data to store
+     *
      * @return void
      */
     protected function storeDatabaseAuditLog(array $auditData): void
     {
         try {
             DB::table('ami_audit_logs')->insert([
-                'audit_id' => $auditData['audit_id'],
-                'execution_id' => $auditData['execution_id'] ?? null,
-                'event_type' => $auditData['event_type'],
-                'level' => $auditData['level'],
-                'category' => $auditData['category'] ?? 'other',
-                'user_id' => $auditData['user_context']['user_id'] ?? null,
-                'session_id' => $auditData['session_id'],
-                'ip_address' => $auditData['ip_address'],
-                'action_name' => $auditData['action_name'] ?? null,
-                'success' => $auditData['success'] ?? null,
+                'audit_id'          => $auditData['audit_id'],
+                'execution_id'      => $auditData['execution_id'] ?? null,
+                'event_type'        => $auditData['event_type'],
+                'level'             => $auditData['level'],
+                'category'          => $auditData['category'] ?? 'other',
+                'user_id'           => $auditData['user_context']['user_id'] ?? null,
+                'session_id'        => $auditData['session_id'],
+                'ip_address'        => $auditData['ip_address'],
+                'action_name'       => $auditData['action_name'] ?? null,
+                'success'           => $auditData['success'] ?? null,
                 'execution_time_ms' => $auditData['execution_time_ms'] ?? null,
-                'audit_data' => json_encode($auditData),
-                'created_at' => $auditData['timestamp'],
-                'updated_at' => $auditData['timestamp'],
+                'audit_data'        => json_encode($auditData),
+                'created_at'        => $auditData['timestamp'],
+                'updated_at'        => $auditData['timestamp'],
             ]);
         } catch (\Exception $e) {
             Log::error('Database audit logging failed', [
-                'error' => $e->getMessage(),
-                'audit_id' => $auditData['audit_id']
+                'error'    => $e->getMessage(),
+                'audit_id' => $auditData['audit_id'],
             ]);
         }
     }
@@ -405,6 +416,7 @@ class AuditLogger
      * Send audit log to external system.
      *
      * @param array $auditData Audit data to send
+     *
      * @return void
      */
     protected function sendExternalAuditLog(array $auditData): void
@@ -420,7 +432,7 @@ class AuditLogger
      */
     protected function generateAuditId(): string
     {
-        return 'audit_' . uniqid() . '_' . time();
+        return 'audit_'.uniqid().'_'.time();
     }
 
     /**

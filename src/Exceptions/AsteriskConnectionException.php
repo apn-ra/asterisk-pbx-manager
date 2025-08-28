@@ -20,11 +20,11 @@ class AsteriskConnectionException extends Exception
     /**
      * Create a new Asterisk connection exception instance.
      *
-     * @param string $message
-     * @param int $code
+     * @param string         $message
+     * @param int            $code
      * @param Exception|null $previous
      */
-    public function __construct(string $message = 'Failed to connect to Asterisk Manager Interface', int $code = 0, Exception $previous = null)
+    public function __construct(string $message = 'Failed to connect to Asterisk Manager Interface', int $code = 0, ?Exception $previous = null)
     {
         $this->errorReference = SecureErrorHandler::generateErrorReference();
         parent::__construct($message, $code, $previous);
@@ -34,6 +34,7 @@ class AsteriskConnectionException extends Exception
      * Create exception for connection timeout.
      *
      * @param int $timeout
+     *
      * @return static
      */
     public static function timeout(int $timeout): static
@@ -44,7 +45,7 @@ class AsteriskConnectionException extends Exception
             $detailedMessage,
             ['timeout_seconds' => $timeout]
         );
-        
+
         return new static($secureMessage);
     }
 
@@ -52,6 +53,7 @@ class AsteriskConnectionException extends Exception
      * Create exception for authentication failure.
      *
      * @param string $username
+     *
      * @return static
      */
     public static function authenticationFailed(string $username): static
@@ -62,7 +64,7 @@ class AsteriskConnectionException extends Exception
             $detailedMessage,
             ['username' => $username]
         );
-        
+
         return new static($secureMessage);
     }
 
@@ -70,8 +72,9 @@ class AsteriskConnectionException extends Exception
      * Create exception for network error.
      *
      * @param string $host
-     * @param int $port
+     * @param int    $port
      * @param string $error
+     *
      * @return static
      */
     public static function networkError(string $host, int $port, string $error): static
@@ -82,7 +85,7 @@ class AsteriskConnectionException extends Exception
             $detailedMessage,
             ['host' => $host, 'port' => $port, 'network_error' => $error]
         );
-        
+
         return new static($secureMessage);
     }
 
@@ -90,6 +93,7 @@ class AsteriskConnectionException extends Exception
      * Create exception for invalid configuration.
      *
      * @param string $parameter
+     *
      * @return static
      */
     public static function invalidConfiguration(string $parameter): static
@@ -100,7 +104,7 @@ class AsteriskConnectionException extends Exception
             $detailedMessage,
             ['parameter' => $parameter]
         );
-        
+
         return new static($secureMessage);
     }
 

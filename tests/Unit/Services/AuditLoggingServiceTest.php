@@ -2,15 +2,15 @@
 
 namespace AsteriskPbxManager\Tests\Unit\Services;
 
-use AsteriskPbxManager\Services\AuditLoggingService;
 use AsteriskPbxManager\Models\AuditLog;
+use AsteriskPbxManager\Services\AuditLoggingService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
+use Mockery;
+use Orchestra\Testbench\TestCase;
 use PAMI\Message\Action\ActionMessage;
 use PAMI\Message\Response\ResponseMessage;
-use Orchestra\Testbench\TestCase;
-use Mockery;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class AuditLoggingServiceTest extends TestCase
 {
@@ -28,9 +28,9 @@ class AuditLoggingServiceTest extends TestCase
         // Set up test database
         $app['config']->set('database.default', 'testing');
         $app['config']->set('database.connections.testing', [
-            'driver' => 'sqlite',
+            'driver'   => 'sqlite',
             'database' => ':memory:',
-            'prefix' => '',
+            'prefix'   => '',
         ]);
 
         // Set up audit logging configuration
@@ -42,10 +42,10 @@ class AuditLoggingServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Run migrations
-        $this->loadMigrationsFrom(__DIR__ . '/../../../src/Migrations');
-        
+        $this->loadMigrationsFrom(__DIR__.'/../../../src/Migrations');
+
         $this->auditLogger = new AuditLoggingService();
     }
 
@@ -64,10 +64,10 @@ class AuditLoggingServiceTest extends TestCase
     {
         // Temporarily change config
         config(['asterisk-pbx-manager.audit.enabled' => false]);
-        
+
         $auditLogger = new AuditLoggingService();
         $this->assertFalse($auditLogger->isEnabled());
-        
+
         // Restore config
         config(['asterisk-pbx-manager.audit.enabled' => true]);
     }
@@ -92,9 +92,9 @@ class AuditLoggingServiceTest extends TestCase
 
         // Verify the audit log was created in database
         $this->assertDatabaseHas('audit_logs', [
-            'action_type' => 'ami_action',
-            'action_name' => 'Originate',
-            'success' => true,
+            'action_type'    => 'ami_action',
+            'action_name'    => 'Originate',
+            'success'        => true,
             'execution_time' => 1.5,
         ]);
     }
@@ -193,17 +193,17 @@ class AuditLoggingServiceTest extends TestCase
         Log::shouldReceive('log')->once();
 
         $this->auditLogger->logConnection('connect', false, [
-            'host' => '127.0.0.1',
-            'error' => 'Connection refused'
+            'host'  => '127.0.0.1',
+            'error' => 'Connection refused',
         ]);
     }
 
     public function testWithContextAddsContext()
     {
         $context = ['user_action' => 'manual_call', 'source' => 'web_interface'];
-        
+
         $result = $this->auditLogger->withContext($context);
-        
+
         $this->assertInstanceOf(AuditLoggingService::class, $result);
         $this->assertSame($this->auditLogger, $result);
     }
@@ -212,7 +212,7 @@ class AuditLoggingServiceTest extends TestCase
     {
         $this->auditLogger->withContext(['test' => 'data']);
         $result = $this->auditLogger->clearContext();
-        
+
         $this->assertInstanceOf(AuditLoggingService::class, $result);
         $this->assertSame($this->auditLogger, $result);
     }

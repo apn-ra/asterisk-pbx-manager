@@ -6,25 +6,25 @@ use AsteriskPbxManager\Exceptions\AsteriskConnectionException;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Configuration Validator Service
- * 
+ * Configuration Validator Service.
+ *
  * Handles validation and sanitization of Asterisk PBX Manager configuration
  * to ensure security and proper functionality.
  */
 class ConfigurationValidator
 {
     /**
-     * Valid AMI schemes
+     * Valid AMI schemes.
      */
     private const VALID_SCHEMES = ['tcp://', 'ssl://'];
 
     /**
-     * Valid logging levels
+     * Valid logging levels.
      */
     private const VALID_LOG_LEVELS = ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'];
 
     /**
-     * Maximum values for configuration parameters
+     * Maximum values for configuration parameters.
      */
     private const MAX_PORT = 65535;
     private const MIN_PORT = 1;
@@ -37,11 +37,13 @@ class ConfigurationValidator
     private const MAX_CONTEXT_LENGTH = 80;
 
     /**
-     * Validate and sanitize complete configuration array
+     * Validate and sanitize complete configuration array.
      *
      * @param array $config Configuration array
-     * @return array Validated and sanitized configuration
+     *
      * @throws AsteriskConnectionException If validation fails
+     *
+     * @return array Validated and sanitized configuration
      */
     public function validateConfiguration(array $config): array
     {
@@ -73,11 +75,13 @@ class ConfigurationValidator
     }
 
     /**
-     * Validate AMI connection configuration
+     * Validate AMI connection configuration.
      *
      * @param array $connection Connection configuration
-     * @return array Validated connection configuration
+     *
      * @throws AsteriskConnectionException If validation fails
+     *
+     * @return array Validated connection configuration
      */
     private function validateConnection(array $connection): array
     {
@@ -90,7 +94,7 @@ class ConfigurationValidator
         }
 
         if (!$this->isValidHost($host)) {
-            throw new AsteriskConnectionException('Invalid AMI host format: ' . $host);
+            throw new AsteriskConnectionException('Invalid AMI host format: '.$host);
         }
         $validated['host'] = $host;
 
@@ -161,26 +165,29 @@ class ConfigurationValidator
     }
 
     /**
-     * Validate event configuration
+     * Validate event configuration.
      *
      * @param array $events Event configuration
+     *
      * @return array Validated event configuration
      */
     private function validateEvents(array $events): array
     {
         return [
-            'enabled' => (bool) ($events['enabled'] ?? true),
-            'broadcast' => (bool) ($events['broadcast'] ?? true),
+            'enabled'         => (bool) ($events['enabled'] ?? true),
+            'broadcast'       => (bool) ($events['broadcast'] ?? true),
             'log_to_database' => (bool) ($events['log_to_database'] ?? true),
         ];
     }
 
     /**
-     * Validate reconnection configuration
+     * Validate reconnection configuration.
      *
      * @param array $reconnection Reconnection configuration
-     * @return array Validated reconnection configuration
+     *
      * @throws AsteriskConnectionException If validation fails
+     *
+     * @return array Validated reconnection configuration
      */
     private function validateReconnection(array $reconnection): array
     {
@@ -208,11 +215,13 @@ class ConfigurationValidator
     }
 
     /**
-     * Validate logging configuration
+     * Validate logging configuration.
      *
      * @param array $logging Logging configuration
-     * @return array Validated logging configuration
+     *
      * @throws AsteriskConnectionException If validation fails
+     *
+     * @return array Validated logging configuration
      */
     private function validateLogging(array $logging): array
     {
@@ -241,11 +250,13 @@ class ConfigurationValidator
     }
 
     /**
-     * Validate queue configuration
+     * Validate queue configuration.
      *
      * @param array $queues Queue configuration
-     * @return array Validated queue configuration
+     *
      * @throws AsteriskConnectionException If validation fails
+     *
+     * @return array Validated queue configuration
      */
     private function validateQueues(array $queues): array
     {
@@ -275,11 +286,13 @@ class ConfigurationValidator
     }
 
     /**
-     * Validate broadcasting configuration
+     * Validate broadcasting configuration.
      *
      * @param array $broadcasting Broadcasting configuration
-     * @return array Validated broadcasting configuration
+     *
      * @throws AsteriskConnectionException If validation fails
+     *
+     * @return array Validated broadcasting configuration
      */
     private function validateBroadcasting(array $broadcasting): array
     {
@@ -300,9 +313,10 @@ class ConfigurationValidator
     }
 
     /**
-     * Sanitize string input by removing null bytes and trimming
+     * Sanitize string input by removing null bytes and trimming.
      *
      * @param mixed $input Input to sanitize
+     *
      * @return string Sanitized string
      */
     private function sanitizeString($input): string
@@ -313,7 +327,7 @@ class ConfigurationValidator
 
         // Remove null bytes and other control characters
         $sanitized = str_replace(["\0", "\r", "\n", "\t"], '', $input);
-        
+
         // Trim whitespace
         $sanitized = trim($sanitized);
 
@@ -321,9 +335,10 @@ class ConfigurationValidator
     }
 
     /**
-     * Check if host is valid (IP address or hostname)
+     * Check if host is valid (IP address or hostname).
      *
      * @param string $host Host to validate
+     *
      * @return bool True if valid, false otherwise
      */
     private function isValidHost(string $host): bool
@@ -357,6 +372,7 @@ class ConfigurationValidator
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -364,9 +380,10 @@ class ConfigurationValidator
     }
 
     /**
-     * Check if username contains only valid characters
+     * Check if username contains only valid characters.
      *
      * @param string $username Username to validate
+     *
      * @return bool True if valid, false otherwise
      */
     private function isValidUsername(string $username): bool
@@ -375,9 +392,10 @@ class ConfigurationValidator
     }
 
     /**
-     * Check if channel name contains only valid characters
+     * Check if channel name contains only valid characters.
      *
      * @param string $channel Channel name to validate
+     *
      * @return bool True if valid, false otherwise
      */
     private function isValidChannelName(string $channel): bool
@@ -386,9 +404,10 @@ class ConfigurationValidator
     }
 
     /**
-     * Check if context contains only valid characters
+     * Check if context contains only valid characters.
      *
      * @param string $context Context to validate
+     *
      * @return bool True if valid, false otherwise
      */
     private function isValidContext(string $context): bool
@@ -397,11 +416,13 @@ class ConfigurationValidator
     }
 
     /**
-     * Validate configuration and throw exception with details if invalid
+     * Validate configuration and throw exception with details if invalid.
      *
      * @param array $config Configuration to validate
-     * @return void
+     *
      * @throws AsteriskConnectionException If validation fails
+     *
+     * @return void
      */
     public function validateOrFail(array $config): void
     {
@@ -409,23 +430,25 @@ class ConfigurationValidator
             $this->validateConfiguration($config);
         } catch (AsteriskConnectionException $e) {
             Log::error('Configuration validation failed', [
-                'error' => $e->getMessage(),
-                'config_keys' => array_keys($config)
+                'error'       => $e->getMessage(),
+                'config_keys' => array_keys($config),
             ]);
+
             throw $e;
         }
     }
 
     /**
-     * Get sanitized and validated configuration for safe usage
+     * Get sanitized and validated configuration for safe usage.
      *
      * @param array $config Raw configuration
+     *
      * @return array Sanitized configuration
      */
     public function getSafeConfiguration(array $config): array
     {
         $validated = $this->validateConfiguration($config);
-        
+
         // Create safe version without exposing sensitive data in logs
         $safe = $validated;
         if (isset($safe['connection']['secret'])) {

@@ -74,7 +74,7 @@ class QueueMemberAdded extends AsteriskEvent
     public function __construct(?EventMessage $event = null)
     {
         parent::__construct($event);
-        
+
         if ($event) {
             $this->extractQueueData($event);
         }
@@ -92,28 +92,28 @@ class QueueMemberAdded extends AsteriskEvent
         $this->interface = $event->getKey('Interface') ?? $event->getKey('Location');
         $this->memberName = $event->getKey('MemberName') ?? $event->getKey('Name');
         $this->status = $event->getKey('Status') ?? $event->getKey('Membership');
-        
+
         // Extract member statistics
         $this->penalty = $this->extractIntValue($event, 'Penalty');
         $this->callsTaken = $this->extractIntValue($event, 'CallsTaken');
         $this->lastCall = $this->extractIntValue($event, 'LastCall');
-        
+
         // Extract pause status
         $pausedValue = $event->getKey('Paused');
         $this->paused = $pausedValue === '1' || strtolower($pausedValue ?? '') === 'yes';
-        
+
         // Add queue-specific data to the data array
         $this->data = array_merge($this->data, [
-            'queue' => $this->queue,
-            'interface' => $this->interface,
-            'member_name' => $this->memberName,
-            'status' => $this->status,
-            'penalty' => $this->penalty,
-            'calls_taken' => $this->callsTaken,
-            'last_call' => $this->lastCall,
-            'paused' => $this->paused,
+            'queue'           => $this->queue,
+            'interface'       => $this->interface,
+            'member_name'     => $this->memberName,
+            'status'          => $this->status,
+            'penalty'         => $this->penalty,
+            'calls_taken'     => $this->callsTaken,
+            'last_call'       => $this->lastCall,
+            'paused'          => $this->paused,
             'state_interface' => $event->getKey('StateInterface'),
-            'membership' => $event->getKey('Membership'),
+            'membership'      => $event->getKey('Membership'),
         ]);
     }
 
@@ -121,12 +121,14 @@ class QueueMemberAdded extends AsteriskEvent
      * Extract integer value from event data.
      *
      * @param EventMessage $event
-     * @param string $key
+     * @param string       $key
+     *
      * @return int|null
      */
     protected function extractIntValue(EventMessage $event, string $key): ?int
     {
         $value = $event->getKey($key);
+
         return $value !== null ? (int) $value : null;
     }
 
@@ -150,9 +152,9 @@ class QueueMemberAdded extends AsteriskEvent
             $channels[] = "{$channelPrefix}.queues.{$this->queue}";
         }
 
-        return $isPrivate 
-            ? array_map(fn($ch) => new \Illuminate\Broadcasting\PrivateChannel($ch), $channels)
-            : array_map(fn($ch) => new Channel($ch), $channels);
+        return $isPrivate
+            ? array_map(fn ($ch) => new \Illuminate\Broadcasting\PrivateChannel($ch), $channels)
+            : array_map(fn ($ch) => new Channel($ch), $channels);
     }
 
     /**
@@ -173,16 +175,16 @@ class QueueMemberAdded extends AsteriskEvent
     public function broadcastWith(): array
     {
         return [
-            'event_type' => 'queue_member_added',
-            'timestamp' => $this->timestamp,
-            'queue' => $this->queue,
-            'interface' => $this->interface,
+            'event_type'  => 'queue_member_added',
+            'timestamp'   => $this->timestamp,
+            'queue'       => $this->queue,
+            'interface'   => $this->interface,
             'member_name' => $this->memberName,
-            'status' => $this->status,
-            'penalty' => $this->penalty,
+            'status'      => $this->status,
+            'penalty'     => $this->penalty,
             'calls_taken' => $this->callsTaken,
-            'last_call' => $this->lastCall,
-            'paused' => $this->paused,
+            'last_call'   => $this->lastCall,
+            'paused'      => $this->paused,
         ];
     }
 
@@ -357,7 +359,7 @@ class QueueMemberAdded extends AsteriskEvent
     public function getFormattedTimeSinceLastCall(): string
     {
         $seconds = $this->getTimeSinceLastCall();
-        
+
         if ($seconds === null) {
             return 'Never';
         }
@@ -368,15 +370,18 @@ class QueueMemberAdded extends AsteriskEvent
 
         if ($seconds < 3600) {
             $minutes = floor($seconds / 60);
+
             return "{$minutes} minutes ago";
         }
 
         if ($seconds < 86400) {
             $hours = floor($seconds / 3600);
+
             return "{$hours} hours ago";
         }
 
         $days = floor($seconds / 86400);
+
         return "{$days} days ago";
     }
 
