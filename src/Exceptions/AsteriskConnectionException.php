@@ -6,9 +6,17 @@ use Exception;
 
 /**
  * Exception thrown when connection to Asterisk Manager Interface fails.
+ * Uses secure error handling to prevent information disclosure.
  */
 class AsteriskConnectionException extends Exception
 {
+    /**
+     * The error reference ID for tracking.
+     *
+     * @var string|null
+     */
+    protected ?string $errorReference = null;
+
     /**
      * Create a new Asterisk connection exception instance.
      *
@@ -18,6 +26,7 @@ class AsteriskConnectionException extends Exception
      */
     public function __construct(string $message = 'Failed to connect to Asterisk Manager Interface', int $code = 0, Exception $previous = null)
     {
+        $this->errorReference = SecureErrorHandler::generateErrorReference();
         parent::__construct($message, $code, $previous);
     }
 
@@ -29,7 +38,14 @@ class AsteriskConnectionException extends Exception
      */
     public static function timeout(int $timeout): static
     {
-        return new static("Connection to Asterisk AMI timed out after {$timeout} seconds");
+        $detailedMessage = "Connection to Asterisk AMI timed out after {$timeout} seconds";
+        $secureMessage = SecureErrorHandler::generateSecureMessage(
+            SecureErrorHandler::ERROR_CONNECTION_FAILED,
+            $detailedMessage,
+            ['timeout_seconds' => $timeout]
+        );
+        
+        return new static($secureMessage);
     }
 
     /**
@@ -40,7 +56,14 @@ class AsteriskConnectionException extends Exception
      */
     public static function authenticationFailed(string $username): static
     {
-        return new static("Authentication failed for AMI user: {$username}");
+        $detailedMessage = "Authentication failed for AMI user: {$username}";
+        $secureMessage = SecureErrorHandler::generateSecureMessage(
+            SecureErrorHandler::ERROR_AUTHENTICATION_FAILED,
+            $detailedMessage,
+            ['username' => $username]
+        );
+        
+        return new static($secureMessage);
     }
 
     /**
@@ -53,7 +76,14 @@ class AsteriskConnectionException extends Exception
      */
     public static function networkError(string $host, int $port, string $error): static
     {
-        return new static("Network error connecting to {$host}:{$port} - {$error}");
+        $detailedMessage = "Network error connecting to {$host}:{$port} - {$error}";
+        $secureMessage = SecureErrorHandler::generateSecureMessage(
+            SecureErrorHandler::ERROR_NETWORK_ERROR,
+            $detailedMessage,
+            ['host' => $host, 'port' => $port, 'network_error' => $error]
+        );
+        
+        return new static($secureMessage);
     }
 
     /**
@@ -64,6 +94,23 @@ class AsteriskConnectionException extends Exception
      */
     public static function invalidConfiguration(string $parameter): static
     {
-        return new static("Invalid AMI configuration parameter: {$parameter}");
+        $detailedMessage = "Invalid AMI configuration parameter: {$parameter}";
+        $secureMessage = SecureErrorHandler::generateSecureMessage(
+            SecureErrorHandler::ERROR_INVALID_CONFIG,
+            $detailedMessage,
+            ['parameter' => $parameter]
+        );
+        
+        return new static($secureMessage);
+    }
+
+    /**
+     * Get the error reference ID for tracking.
+     *
+     * @return string|null
+     */
+    public function getErrorReference(): ?string
+    {
+        return $this->errorReference;
     }
 }

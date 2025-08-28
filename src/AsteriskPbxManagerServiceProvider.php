@@ -8,6 +8,10 @@ use PAMI\Client\Impl\ClientImpl;
 use AsteriskPbxManager\Services\AsteriskManagerService;
 use AsteriskPbxManager\Services\EventProcessor;
 use AsteriskPbxManager\Services\ActionExecutor;
+use AsteriskPbxManager\Services\ConfigurationValidator;
+use AsteriskPbxManager\Services\AmiInputSanitizer;
+use AsteriskPbxManager\Services\BroadcastAuthService;
+use AsteriskPbxManager\Services\AuditLogger;
 use AsteriskPbxManager\Commands\AsteriskStatus;
 use AsteriskPbxManager\Commands\MonitorEvents;
 use AsteriskPbxManager\Listeners\LogCallEvent;
@@ -28,19 +32,33 @@ class AsteriskPbxManagerServiceProvider extends ServiceProvider
             'asterisk-pbx-manager'
         );
 
-        // Bind PAMI Client
+        // Bind Configuration Validator
+        $this->app->singleton(ConfigurationValidator::class, function ($app) {
+            return new ConfigurationValidator();
+        });
+
+        // Bind AMI Input Sanitizer
+        $this->app->singleton(AmiInputSanitizer::class, function ($app) {
+            return new AmiInputSanitizer();
+        });
+
+        // Bind PAMI Client with comprehensive validation
         $this->app->singleton(ClientImpl::class, function ($app) {
-            $config = $app['config']['asterisk-pbx-manager.connection'];
+            $config = $app['config']['asterisk-pbx-manager'];
+            $validator = $app->make(ConfigurationValidator::class);
             
-            // Validate required configuration
-            $this->validateConfiguration($config);
+            // Validate and sanitize complete configuration
+            $validatedConfig = $validator->validateConfiguration($config);
             
-            return new ClientImpl($config);
+            return new ClientImpl($validatedConfig['connection']);
         });
 
         // Bind main service
         $this->app->singleton('asterisk-manager', function ($app) {
-            return new AsteriskManagerService($app->make(ClientImpl::class));
+            return new AsteriskManagerService(
+                $app->make(ClientImpl::class),
+                $app->make(AmiInputSanitizer::class)
+            );
         });
 
         // Bind additional services
@@ -50,6 +68,11 @@ class AsteriskPbxManagerServiceProvider extends ServiceProvider
 
         $this->app->singleton(ActionExecutor::class, function ($app) {
             return new ActionExecutor($app->make('asterisk-manager'));
+        });
+
+        // Bind Broadcast Authentication Service
+        $this->app->singleton(BroadcastAuthService::class, function ($app) {
+            return new BroadcastAuthService($app['auth']);
         });
 
         // Register facade
@@ -110,30 +133,6 @@ class AsteriskPbxManagerServiceProvider extends ServiceProvider
         }
     }
 
-    /**
-     * Validate the AMI configuration.
-     */
-    protected function validateConfiguration(array $config): void
-    {
-        $requiredKeys = ['host', 'port', 'username', 'secret'];
-        
-        foreach ($requiredKeys as $key) {
-            if (empty($config[$key])) {
-                throw new \InvalidArgumentException(
-                    "Missing required Asterisk AMI configuration: {$key}"
-                );
-            }
-        }
-
-        // Log configuration validation
-        if (config('asterisk-pbx-manager.logging.enabled', true)) {
-            Log::info('Asterisk PBX Manager configuration validated successfully', [
-                'host' => $config['host'],
-                'port' => $config['port'],
-                'username' => $config['username'],
-            ]);
-        }
-    }
 
     /**
      * Get the services provided by the provider.
@@ -145,6 +144,9 @@ class AsteriskPbxManagerServiceProvider extends ServiceProvider
             AsteriskManagerService::class,
             EventProcessor::class,
             ActionExecutor::class,
+            ConfigurationValidator::class,
+            AmiInputSanitizer::class,
+            BroadcastAuthService::class,
             ClientImpl::class,
         ];
     }

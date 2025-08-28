@@ -14,17 +14,20 @@ use PAMI\Message\Action\SetVarAction;
 use PAMI\Message\Action\AttendedTransferAction;
 use Illuminate\Support\Facades\Log;
 use AsteriskPbxManager\Exceptions\ActionExecutionException;
+use AsteriskPbxManager\Services\AmiInputSanitizer;
 
 class ChannelManagerService
 {
     protected AsteriskManagerService $asteriskManager;
+    protected AmiInputSanitizer $sanitizer;
 
     /**
      * Create a new channel manager service instance.
      */
-    public function __construct(AsteriskManagerService $asteriskManager)
+    public function __construct(AsteriskManagerService $asteriskManager, AmiInputSanitizer $sanitizer)
     {
         $this->asteriskManager = $asteriskManager;
+        $this->sanitizer = $sanitizer;
     }
 
     /**
@@ -32,8 +35,9 @@ class ChannelManagerService
      */
     public function blindTransfer(string $channel, string $extension, string $context = 'default'): bool
     {
-        $this->validateChannel($channel);
-        $this->validateExtension($extension);
+        $channel = $this->validateChannel($channel);
+        $extension = $this->validateExtension($extension);
+        $context = $this->sanitizer->sanitizeContext($context);
 
         try {
             $action = new RedirectAction($channel, $extension, $context, 1);
@@ -447,38 +451,39 @@ class ChannelManagerService
     }
 
     /**
-     * Validate channel format.
+     * Validate and sanitize channel parameter.
+     *
+     * @param string $channel
+     * @return string Sanitized channel
+     * @throws \InvalidArgumentException
      */
-    protected function validateChannel(string $channel): void
+    protected function validateChannel(string $channel): string
     {
-        if (empty($channel)) {
-            throw new \InvalidArgumentException('Channel cannot be empty.');
-        }
-        
-        // Basic channel format validation (SIP/1234-00000001, PJSIP/user-00000001, etc.)
-        if (!preg_match('/^[A-Z]+\/[a-zA-Z0-9_@.-]+(-[0-9a-f]{8})?$/i', $channel)) {
-            throw new \InvalidArgumentException('Invalid channel format. Expected format: TECHNOLOGY/identifier[-uniqueid] (e.g., SIP/1234-00000001).');
-        }
+        return $this->sanitizer->sanitizeChannel($channel);
     }
 
     /**
-     * Validate extension format.
+     * Validate and sanitize extension parameter.
+     *
+     * @param string $extension
+     * @return string Sanitized extension
+     * @throws \InvalidArgumentException
      */
-    protected function validateExtension(string $extension): void
+    protected function validateExtension(string $extension): string
     {
-        if (empty($extension) || !preg_match('/^[a-zA-Z0-9_*#+]+$/', $extension)) {
-            throw new \InvalidArgumentException('Invalid extension format. Extension should contain only letters, numbers, underscores, and common dial characters.');
-        }
+        return $this->sanitizer->sanitizeExtension($extension);
     }
 
     /**
-     * Validate parking space format.
+     * Validate and sanitize parking space parameter.
+     *
+     * @param string $parkingSpace
+     * @return string Sanitized parking space
+     * @throws \InvalidArgumentException
      */
-    protected function validateParkingSpace(string $parkingSpace): void
+    protected function validateParkingSpace(string $parkingSpace): string
     {
-        if (empty($parkingSpace) || !preg_match('/^[0-9]+$/', $parkingSpace)) {
-            throw new \InvalidArgumentException('Invalid parking space format. Parking space should be a numeric value.');
-        }
+        return $this->sanitizer->sanitizeParkingSpace($parkingSpace);
     }
 
     /**

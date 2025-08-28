@@ -3,6 +3,7 @@
 namespace AsteriskPbxManager\Services;
 
 use AsteriskPbxManager\Services\AsteriskManagerService;
+use AsteriskPbxManager\Services\AuditLogger;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Collection;
@@ -12,6 +13,7 @@ use Carbon\Carbon;
 class ActionExecutor
 {
     protected AsteriskManagerService $asteriskManager;
+    protected AuditLogger $auditLogger;
     protected array $actionQueue = [];
     protected array $actionResults = [];
     protected bool $batchMode = false;
@@ -21,9 +23,10 @@ class ActionExecutor
     /**
      * Create a new action executor instance.
      */
-    public function __construct(AsteriskManagerService $asteriskManager)
+    public function __construct(AsteriskManagerService $asteriskManager, AuditLogger $auditLogger)
     {
         $this->asteriskManager = $asteriskManager;
+        $this->auditLogger = $auditLogger;
     }
 
     /**
@@ -32,6 +35,11 @@ class ActionExecutor
     public function execute($action, array $options = []): array
     {
         $executionId = $this->generateExecutionId();
+        
+        // Log action start for audit trail
+        if ($this->auditLogger->isEnabled()) {
+            $this->auditLogger->logActionStart($executionId, $action, $options);
+        }
         
         try {
             $startTime = microtime(true);
@@ -57,6 +65,11 @@ class ActionExecutor
                 'options' => $options
             ];
 
+            // Log action completion for audit trail
+            if ($this->auditLogger->isEnabled()) {
+                $this->auditLogger->logActionComplete($executionId, $action, $result, $result['execution_time_ms']);
+            }
+
             if (!$response->isSuccess()) {
                 $result['error'] = $response->getMessage();
                 Log::warning('AMI action failed', [
@@ -74,6 +87,11 @@ class ActionExecutor
             return $result;
 
         } catch (\Exception $e) {
+            // Log action failure for audit trail
+            if ($this->auditLogger->isEnabled()) {
+                $this->auditLogger->logActionFailure($executionId, $action, $e);
+            }
+
             $result = [
                 'execution_id' => $executionId,
                 'success' => false,

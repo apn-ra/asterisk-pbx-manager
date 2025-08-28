@@ -8,6 +8,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use PAMI\Message\Event\EventMessage;
+use AsteriskPbxManager\Services\BroadcastAuthService;
 
 /**
  * Base class for all Asterisk AMI events.
@@ -144,8 +145,36 @@ class AsteriskEvent implements ShouldBroadcast
      */
     public function shouldBroadcast(): bool
     {
-        return config('asterisk-pbx-manager.events.broadcast', true) && 
-               config('asterisk-pbx-manager.events.enabled', true);
+        // Check basic configuration first
+        $broadcastEnabled = config('asterisk-pbx-manager.events.broadcast', true);
+        $eventsEnabled = config('asterisk-pbx-manager.events.enabled', true);
+        
+        if (!$broadcastEnabled || !$eventsEnabled) {
+            return false;
+        }
+
+        // Check authentication if enabled
+        try {
+            $authService = app(BroadcastAuthService::class);
+            
+            if ($authService->isEnabled()) {
+                return $authService->canReceiveBroadcast();
+            }
+            
+            return true;
+            
+        } catch (\Exception $e) {
+            // Log authentication failure but don't break broadcasting for non-auth errors
+            \Illuminate\Support\Facades\Log::warning('Broadcast authentication check failed', [
+                'event' => $this->eventName,
+                'error' => $e->getMessage(),
+                'context' => 'asterisk_event_broadcast'
+            ]);
+            
+            // If authentication service fails, fall back to basic broadcast decision
+            // This ensures the system doesn't break if auth service has issues
+            return true;
+        }
     }
 
     /**

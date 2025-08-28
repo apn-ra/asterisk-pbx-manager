@@ -26,6 +26,13 @@ class ActionExecutionException extends Exception
     protected ?ResponseMessage $response = null;
 
     /**
+     * The error reference ID for tracking.
+     *
+     * @var string|null
+     */
+    protected ?string $errorReference = null;
+
+    /**
      * Create a new action execution exception instance.
      *
      * @param string $message
@@ -34,6 +41,7 @@ class ActionExecutionException extends Exception
      */
     public function __construct(string $message = 'AMI action execution failed', int $code = 0, Exception $previous = null)
     {
+        $this->errorReference = SecureErrorHandler::generateErrorReference();
         parent::__construct($message, $code, $previous);
     }
 
@@ -49,7 +57,18 @@ class ActionExecutionException extends Exception
         $actionName = $action->getAction();
         $responseMessage = $response->getMessage() ?? 'Unknown error';
         
-        $exception = new static("Action '{$actionName}' failed: {$responseMessage}");
+        $detailedMessage = "Action '{$actionName}' failed: {$responseMessage}";
+        $secureMessage = SecureErrorHandler::generateSecureMessage(
+            SecureErrorHandler::ERROR_ACTION_FAILED,
+            $detailedMessage,
+            [
+                'action_name' => $actionName,
+                'action_id' => $action->getActionId(),
+                'response_success' => $response->isSuccess()
+            ]
+        );
+        
+        $exception = new static($secureMessage);
         $exception->setAction($action);
         $exception->setResponse($response);
         
@@ -67,7 +86,18 @@ class ActionExecutionException extends Exception
     {
         $actionName = $action->getAction();
         
-        $exception = new static("Action '{$actionName}' timed out after {$timeout} seconds");
+        $detailedMessage = "Action '{$actionName}' timed out after {$timeout} seconds";
+        $secureMessage = SecureErrorHandler::generateSecureMessage(
+            SecureErrorHandler::ERROR_ACTION_TIMEOUT,
+            $detailedMessage,
+            [
+                'action_name' => $actionName,
+                'action_id' => $action->getActionId(),
+                'timeout_seconds' => $timeout
+            ]
+        );
+        
+        $exception = new static($secureMessage);
         $exception->setAction($action);
         
         return $exception;
@@ -83,7 +113,18 @@ class ActionExecutionException extends Exception
      */
     public static function invalidParameter(string $actionName, string $parameter, string $value): static
     {
-        return new static("Invalid parameter '{$parameter}' with value '{$value}' for action '{$actionName}'");
+        $detailedMessage = "Invalid parameter '{$parameter}' with value '{$value}' for action '{$actionName}'";
+        $secureMessage = SecureErrorHandler::generateSecureMessage(
+            SecureErrorHandler::ERROR_INVALID_PARAMETER,
+            $detailedMessage,
+            [
+                'action_name' => $actionName,
+                'parameter' => $parameter,
+                'parameter_value' => $value
+            ]
+        );
+        
+        return new static($secureMessage);
     }
 
     /**
@@ -95,7 +136,17 @@ class ActionExecutionException extends Exception
      */
     public static function missingParameter(string $actionName, string $parameter): static
     {
-        return new static("Missing required parameter '{$parameter}' for action '{$actionName}'");
+        $detailedMessage = "Missing required parameter '{$parameter}' for action '{$actionName}'";
+        $secureMessage = SecureErrorHandler::generateSecureMessage(
+            SecureErrorHandler::ERROR_MISSING_PARAMETER,
+            $detailedMessage,
+            [
+                'action_name' => $actionName,
+                'parameter' => $parameter
+            ]
+        );
+        
+        return new static($secureMessage);
     }
 
     /**
@@ -107,7 +158,17 @@ class ActionExecutionException extends Exception
      */
     public static function permissionDenied(string $actionName, string $username): static
     {
-        return new static("Permission denied for action '{$actionName}' - user '{$username}' lacks required privileges");
+        $detailedMessage = "Permission denied for action '{$actionName}' - user '{$username}' lacks required privileges";
+        $secureMessage = SecureErrorHandler::generateSecureMessage(
+            SecureErrorHandler::ERROR_PERMISSION_DENIED,
+            $detailedMessage,
+            [
+                'action_name' => $actionName,
+                'username' => $username
+            ]
+        );
+        
+        return new static($secureMessage);
     }
 
     /**
@@ -155,7 +216,17 @@ class ActionExecutionException extends Exception
     }
 
     /**
-     * Get additional context for debugging.
+     * Get the error reference ID for tracking.
+     *
+     * @return string|null
+     */
+    public function getErrorReference(): ?string
+    {
+        return $this->errorReference;
+    }
+
+    /**
+     * Get additional context for debugging (sanitized).
      *
      * @return array
      */
@@ -169,9 +240,12 @@ class ActionExecutionException extends Exception
         }
 
         if ($this->response) {
-            $context['response_message'] = $this->response->getMessage();
             $context['response_success'] = $this->response->isSuccess();
+            // Don't expose raw response message for security
+            $context['has_response_message'] = !empty($this->response->getMessage());
         }
+
+        $context['error_reference'] = $this->errorReference;
 
         return $context;
     }

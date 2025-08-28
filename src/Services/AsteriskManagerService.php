@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use AsteriskPbxManager\Exceptions\AsteriskConnectionException;
 use AsteriskPbxManager\Exceptions\ActionExecutionException;
 use AsteriskPbxManager\Events\AsteriskEvent;
+use AsteriskPbxManager\Services\AmiInputSanitizer;
 
 /**
  * Main service class for Asterisk Manager Interface operations.
@@ -61,13 +62,22 @@ class AsteriskManagerService
     protected array $eventListeners = [];
 
     /**
+     * AMI input sanitizer instance.
+     *
+     * @var AmiInputSanitizer
+     */
+    protected AmiInputSanitizer $sanitizer;
+
+    /**
      * Create a new Asterisk Manager Service instance.
      *
      * @param ClientImpl $client
+     * @param AmiInputSanitizer $sanitizer
      */
-    public function __construct(ClientImpl $client)
+    public function __construct(ClientImpl $client, AmiInputSanitizer $sanitizer)
     {
         $this->client = $client;
+        $this->sanitizer = $sanitizer;
         $this->maxReconnectionAttempts = config('asterisk-pbx-manager.reconnection.max_attempts', 3);
         $this->reconnectionDelay = config('asterisk-pbx-manager.reconnection.delay_seconds', 5);
         
@@ -253,10 +263,14 @@ class AsteriskManagerService
         int $priority = 1,
         int $timeout = 30000
     ): bool {
-        $this->validateParameter('channel', $channel);
-        $this->validateParameter('extension', $extension);
+        // Sanitize inputs for AMI security
+        $channel = $this->sanitizer->sanitizeChannel($channel);
+        $extension = $this->sanitizer->sanitizeExtension($extension);
 
         $context = $context ?: config('asterisk-pbx-manager.queues.default_context', 'default');
+        if ($context) {
+            $context = $this->sanitizer->sanitizeContext($context);
+        }
         $priority = $priority ?: config('asterisk-pbx-manager.queues.default_priority', 1);
 
         $action = new OriginateAction($channel);
@@ -289,7 +303,8 @@ class AsteriskManagerService
      */
     public function hangupCall(string $channel): bool
     {
-        $this->validateParameter('channel', $channel);
+        // Sanitize input for AMI security
+        $channel = $this->sanitizer->sanitizeChannel($channel);
 
         $action = new HangupAction($channel);
 
@@ -387,19 +402,6 @@ class AsteriskManagerService
         return $this;
     }
 
-    /**
-     * Validate a parameter value.
-     *
-     * @param string $name
-     * @param mixed $value
-     * @throws ActionExecutionException
-     */
-    protected function validateParameter(string $name, $value): void
-    {
-        if (empty($value) || !is_string($value)) {
-            throw ActionExecutionException::missingParameter('generic', $name);
-        }
-    }
 
     /**
      * Log an info message.
