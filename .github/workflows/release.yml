@@ -174,7 +174,7 @@ jobs:
         zip -r asterisk-pbx-manager-${{ needs.validate-release.outputs.version }}.zip release-package/
 
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ needs.validate-release.outputs.version }}
         name: "Asterisk PBX Manager ${{ needs.validate-release.outputs.version }}"
