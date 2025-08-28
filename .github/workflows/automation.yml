@@ -11,6 +11,11 @@ on:
     # Run stale issue cleanup weekly on Sundays at 1 AM UTC
     - cron: '0 1 * * 0'
 
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
 jobs:
   label-issues:
     runs-on: ubuntu-latest
