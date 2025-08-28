@@ -1,0 +1,272 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.2.3)'
+        required: true
+        type: string
+      draft:
+        description: 'Create as draft release'
+        required: false
+        type: boolean
+        default: false
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  validate-release:
+    runs-on: ubuntu-latest
+    name: Validate Release
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Extract version information
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION="${GITHUB_REF#refs/tags/}"
+        fi
+        
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        
+        # Check if this is a pre-release version (contains alpha, beta, rc)
+        if [[ "$VERSION" =~ (alpha|beta|rc) ]]; then
+          echo "is_prerelease=true" >> $GITHUB_OUTPUT
+        else
+          echo "is_prerelease=false" >> $GITHUB_OUTPUT
+        fi
+        
+        echo "Extracted version: $VERSION"
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.4
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+
+    - name: Install Composer dependencies
+      run: composer install --prefer-dist --no-interaction --no-dev --optimize-autoloader
+
+    - name: Run tests before release
+      run: vendor/bin/phpunit --configuration phpunit.xml
+
+    - name: Validate composer.json
+      run: composer validate --strict --no-check-all
+
+    - name: Check version consistency
+      run: |
+        # Extract version from composer.json
+        COMPOSER_VERSION=$(php -r "echo json_decode(file_get_contents('composer.json'), true)['version'] ?? 'not-set';")
+        TAG_VERSION="${{ steps.version.outputs.version }}"
+        
+        # Remove 'v' prefix for comparison
+        TAG_VERSION_CLEAN=${TAG_VERSION#v}
+        
+        echo "Composer version: $COMPOSER_VERSION"
+        echo "Tag version: $TAG_VERSION_CLEAN"
+        
+        if [ "$COMPOSER_VERSION" != "not-set" ] && [ "$COMPOSER_VERSION" != "$TAG_VERSION_CLEAN" ]; then
+          echo "Version mismatch between composer.json ($COMPOSER_VERSION) and tag ($TAG_VERSION_CLEAN)"
+          exit 1
+        fi
+
+  create-release:
+    needs: validate-release
+    runs-on: ubuntu-latest
+    name: Create GitHub Release
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.4
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+
+    - name: Install Composer dependencies
+      run: composer install --prefer-dist --no-interaction --no-dev --optimize-autoloader
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Generate changelog for this release
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        
+        # Get previous tag
+        PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "$VERSION" | head -n 1)
+        
+        echo "Generating changelog from $PREVIOUS_TAG to $VERSION"
+        
+        # Generate changelog content
+        CHANGELOG_CONTENT="## Changes in $VERSION"$'\n\n'
+        
+        if [ -n "$PREVIOUS_TAG" ]; then
+          # Get commits between tags
+          COMMITS=$(git log --pretty=format:"- %s (%h)" "$PREVIOUS_TAG..HEAD" --reverse)
+          if [ -n "$COMMITS" ]; then
+            CHANGELOG_CONTENT+="### Commits"$'\n'
+            CHANGELOG_CONTENT+="$COMMITS"$'\n\n'
+          fi
+          
+          # Get pull requests merged
+          PRS=$(git log --pretty=format:"%s" "$PREVIOUS_TAG..HEAD" | grep -E "Merge pull request #[0-9]+" | sed 's/Merge pull request /- PR /' || true)
+          if [ -n "$PRS" ]; then
+            CHANGELOG_CONTENT+="### Pull Requests"$'\n'
+            CHANGELOG_CONTENT+="$PRS"$'\n\n'
+          fi
+        else
+          CHANGELOG_CONTENT+="Initial release"$'\n\n'
+        fi
+        
+        # Add installation instructions
+        CHANGELOG_CONTENT+="## Installation"$'\n\n'
+        CHANGELOG_CONTENT+='```bash'$'\n'
+        CHANGELOG_CONTENT+="composer require apn-ra/asterisk-pbx-manager:$VERSION"$'\n'
+        CHANGELOG_CONTENT+='```'$'\n\n'
+        
+        # Save changelog to file
+        echo "$CHANGELOG_CONTENT" > RELEASE_CHANGELOG.md
+        
+        # Set output for GitHub release
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Create package archive
+      run: |
+        # Create clean package directory
+        mkdir -p release-package
+        
+        # Copy source files
+        cp -r src/ release-package/
+        cp -r examples/ release-package/ 2>/dev/null || echo "No examples directory"
+        cp composer.json release-package/
+        cp README.md release-package/
+        cp CONTRIBUTING.md release-package/
+        cp .github/SECURITY.md release-package/SECURITY.md
+        cp docs/ release-package/ -r 2>/dev/null || echo "No docs directory"
+        
+        # Create archive
+        tar -czf asterisk-pbx-manager-${{ needs.validate-release.outputs.version }}.tar.gz -C release-package .
+        zip -r asterisk-pbx-manager-${{ needs.validate-release.outputs.version }}.zip release-package/
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.validate-release.outputs.version }}
+        name: "Asterisk PBX Manager ${{ needs.validate-release.outputs.version }}"
+        body: ${{ steps.changelog.outputs.changelog }}
+        draft: ${{ github.event.inputs.draft == 'true' }}
+        prerelease: ${{ needs.validate-release.outputs.is_prerelease == 'true' || github.event.inputs.prerelease == 'true' }}
+        files: |
+          asterisk-pbx-manager-${{ needs.validate-release.outputs.version }}.tar.gz
+          asterisk-pbx-manager-${{ needs.validate-release.outputs.version }}.zip
+          RELEASE_CHANGELOG.md
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-packagist:
+    needs: [validate-release, create-release]
+    runs-on: ubuntu-latest
+    name: Notify Packagist
+    if: success() && !contains(needs.validate-release.outputs.version, 'alpha') && !contains(needs.validate-release.outputs.version, 'beta')
+    
+    steps:
+    - name: Notify Packagist
+      run: |
+        curl -XPOST -H'content-type:application/json' \
+          'https://packagist.org/api/update-package?username=${{ secrets.PACKAGIST_USERNAME }}&apiToken=${{ secrets.PACKAGIST_TOKEN }}' \
+          -d'{"repository":{"url":"https://github.com/${{ github.repository }}"}}'
+      continue-on-error: true
+
+  update-documentation:
+    needs: [validate-release, create-release]
+    runs-on: ubuntu-latest
+    name: Update Documentation
+    if: success() && !contains(needs.validate-release.outputs.version, 'alpha') && !contains(needs.validate-release.outputs.version, 'beta')
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Update version references
+      run: |
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        VERSION_CLEAN=${VERSION#v}
+        
+        # Update README.md with new version
+        sed -i "s/asterisk-pbx-manager:[^\"']*/asterisk-pbx-manager:^$VERSION_CLEAN/g" README.md
+        
+        # Update documentation examples
+        find docs/ -name "*.md" -exec sed -i "s/asterisk-pbx-manager:[^\"']*/asterisk-pbx-manager:^$VERSION_CLEAN/g" {} \; 2>/dev/null || true
+
+    - name: Update CHANGELOG.md
+      run: |
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        DATE=$(date +"%Y-%m-%d")
+        
+        # Prepend new version to CHANGELOG.md
+        if [ -f CHANGELOG.md ]; then
+          # Create temporary file with new entry
+          echo "# Changelog" > CHANGELOG_NEW.md
+          echo "" >> CHANGELOG_NEW.md
+          echo "## [$VERSION] - $DATE" >> CHANGELOG_NEW.md
+          echo "" >> CHANGELOG_NEW.md
+          
+          # Add release notes
+          cat RELEASE_CHANGELOG.md >> CHANGELOG_NEW.md
+          echo "" >> CHANGELOG_NEW.md
+          
+          # Append existing changelog (skip first line)
+          tail -n +2 CHANGELOG.md >> CHANGELOG_NEW.md
+          mv CHANGELOG_NEW.md CHANGELOG.md
+        else
+          # Create new CHANGELOG.md
+          echo "# Changelog" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "## [$VERSION] - $DATE" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          cat RELEASE_CHANGELOG.md >> CHANGELOG.md
+        fi
+
+    - name: Commit documentation updates
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        if git diff --exit-code; then
+          echo "No documentation changes to commit"
+        else
+          git add README.md CHANGELOG.md docs/
+          git commit -m "docs: update documentation for release ${{ needs.validate-release.outputs.version }}"
+          git push origin main
+        fi

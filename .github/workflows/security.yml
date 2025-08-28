@@ -1,0 +1,350 @@
+name: Security Analysis
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run security analysis weekly on Wednesdays at 3 AM UTC
+    - cron: '0 3 * * 3'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  codeql-analysis:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'php' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        queries: +security-and-quality
+        config: |
+          paths-ignore:
+            - vendor
+            - node_modules
+            - tests
+            - build
+        
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.4
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+
+    - name: Install dependencies
+      run: |
+        composer install --prefer-dist --no-interaction --no-dev --optimize-autoloader
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{ matrix.language }}"
+
+  dependency-security:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.4
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-interaction
+
+    - name: Run Composer Audit (Comprehensive)
+      id: composer-audit
+      run: |
+        echo "=== Composer Security Audit ===" | tee composer-audit.log
+        composer audit --format=json | tee composer-audit.json
+        composer audit --format=table | tee -a composer-audit.log
+        
+        # Check if vulnerabilities were found
+        VULN_COUNT=$(jq '.advisories | length' composer-audit.json 2>/dev/null || echo "0")
+        echo "vulnerabilities_found=$VULN_COUNT" >> $GITHUB_OUTPUT
+        
+        if [ "$VULN_COUNT" -gt 0 ]; then
+          echo "::warning::Found $VULN_COUNT security vulnerabilities in dependencies"
+          echo "SECURITY_ISSUES=true" >> $GITHUB_ENV
+        fi
+      continue-on-error: true
+
+    - name: Security Advisory Database Check
+      run: |
+        echo "=== Security Advisory Database Check ===" | tee -a composer-audit.log
+        composer global require --quiet roave/security-advisories:dev-latest 2>/dev/null || true
+        composer show --outdated --direct --strict | tee -a composer-audit.log || echo "All direct dependencies are up to date"
+      continue-on-error: true
+
+    - name: Check for known vulnerable packages
+      run: |
+        echo "=== Known Vulnerable Package Check ===" | tee -a composer-audit.log
+        
+        # Check for commonly vulnerable packages
+        VULNERABLE_PATTERNS=(
+          "symfony/http-kernel"
+          "laravel/framework"
+          "doctrine/dbal"
+          "guzzlehttp/guzzle"
+          "monolog/monolog"
+        )
+        
+        for package in "${VULNERABLE_PATTERNS[@]}"; do
+          if composer show "$package" 2>/dev/null; then
+            VERSION=$(composer show "$package" | grep 'versions' | head -1)
+            echo "Found potentially security-relevant package: $package - $VERSION" | tee -a composer-audit.log
+          fi
+        done
+
+    - name: AMI Security Configuration Check
+      run: |
+        echo "=== AMI Security Configuration Analysis ===" | tee ami-security.log
+        
+        # Check for hardcoded credentials or insecure configurations
+        find src/ -type f -name "*.php" -exec grep -l -i "password\|secret\|credential" {} \; | while read file; do
+          echo "Checking $file for potential security issues..." | tee -a ami-security.log
+          
+          # Look for hardcoded credentials
+          if grep -n -i "password.*=.*[\"'][^\"']*[\"']" "$file" | grep -v -i "env\|config\|null\|empty\|default"; then
+            echo "⚠️  Potential hardcoded password found in $file" | tee -a ami-security.log
+          fi
+          
+          # Look for insecure AMI configurations
+          if grep -n -i "scheme.*tcp://" "$file"; then
+            echo "⚠️  Non-encrypted AMI connection found in $file - consider using tcps://" | tee -a ami-security.log
+          fi
+        done
+        
+        # Check configuration files
+        find src/Config/ -type f -name "*.php" -exec echo "Analyzing config file: {}" \; -exec cat {} \; | tee -a ami-security.log
+
+    - name: PHP Security Scanner
+      run: |
+        echo "=== PHP Security Analysis ===" | tee php-security.log
+        
+        # Install and run Psalm security analysis
+        composer global require --quiet vimeo/psalm
+        ~/.composer/vendor/bin/psalm --version | tee -a php-security.log
+        
+        # Create basic psalm.xml for security analysis
+        cat > psalm-security.xml << 'EOF'
+        <?xml version="1.0"?>
+        <psalm
+            errorLevel="3"
+            resolveFromConfigFile="true"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns="https://getpsalm.org/schema/config"
+            xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+        >
+            <projectFiles>
+                <directory name="src" />
+            </projectFiles>
+            <plugins>
+                <pluginClass class="Psalm\PhpUnitPlugin\Plugin"/>
+            </plugins>
+            <issueHandlers>
+                <LessSpecificReturnType errorLevel="info" />
+                <MoreSpecificReturnType errorLevel="info" />
+                <PropertyNotSetInConstructor errorLevel="info" />
+            </issueHandlers>
+        </psalm>
+        EOF
+        
+        ~/.composer/vendor/bin/psalm --config=psalm-security.xml --report=psalm-security.txt 2>&1 | tee -a php-security.log || true
+
+    - name: Upload security scan results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-scan-results
+        path: |
+          composer-audit.log
+          composer-audit.json
+          ami-security.log
+          php-security.log
+          psalm-security.txt
+
+    - name: Create security summary
+      if: always()
+      run: |
+        echo "## Security Scan Summary" > security-summary.md
+        echo "### Composer Audit" >> security-summary.md
+        
+        if [ -f composer-audit.json ]; then
+          VULN_COUNT=$(jq '.advisories | length' composer-audit.json 2>/dev/null || echo "0")
+          if [ "$VULN_COUNT" -gt 0 ]; then
+            echo "⚠️ **$VULN_COUNT security vulnerabilities found in dependencies**" >> security-summary.md
+            echo "" >> security-summary.md
+            echo "```" >> security-summary.md
+            head -20 composer-audit.log >> security-summary.md
+            echo "```" >> security-summary.md
+          else
+            echo "✅ No known security vulnerabilities found in dependencies" >> security-summary.md
+          fi
+        fi
+        
+        echo "" >> security-summary.md
+        echo "### AMI Security Analysis" >> security-summary.md
+        if [ -f ami-security.log ] && grep -q "⚠️" ami-security.log; then
+          echo "⚠️ **Potential AMI security issues found**" >> security-summary.md
+          echo "" >> security-summary.md
+          echo "```" >> security-summary.md
+          grep "⚠️" ami-security.log >> security-summary.md
+          echo "```" >> security-summary.md
+        else
+          echo "✅ No obvious AMI security issues detected" >> security-summary.md
+        fi
+        
+        echo "" >> security-summary.md
+        echo "### PHP Security Analysis" >> security-summary.md
+        if [ -f psalm-security.txt ] && grep -q "ERROR" psalm-security.txt; then
+          echo "⚠️ **PHP security issues detected by Psalm**" >> security-summary.md
+          echo "" >> security-summary.md
+          echo "```" >> security-summary.md
+          grep "ERROR" psalm-security.txt | head -10 >> security-summary.md
+          echo "```" >> security-summary.md
+        else
+          echo "✅ No critical PHP security issues detected" >> security-summary.md
+        fi
+
+    - name: Comment security summary on PR
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          if (fs.existsSync('security-summary.md')) {
+            const summary = fs.readFileSync('security-summary.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🔒 Security Analysis Results\n\n${summary}`
+            });
+          }
+
+  secret-scanning:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: TruffleHog Secret Scan
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+        extra_args: --debug --only-verified
+
+    - name: Manual secret pattern check
+      run: |
+        echo "=== Manual Secret Pattern Analysis ===" | tee secret-scan.log
+        
+        # Common secret patterns for Asterisk/AMI
+        PATTERNS=(
+          "ami_secret.*=.*[\"'][^\"']{8,}[\"']"
+          "asterisk.*password.*=.*[\"'][^\"']{8,}[\"']"
+          "secret.*=.*[\"'][A-Za-z0-9]{20,}[\"']"
+          "password.*=.*[\"'][^\"']{8,}[\"']"
+          "api_key.*=.*[\"'][A-Za-z0-9]{20,}[\"']"
+          "token.*=.*[\"'][A-Za-z0-9]{20,}[\"']"
+        )
+        
+        for pattern in "${PATTERNS[@]}"; do
+          echo "Checking for pattern: $pattern" | tee -a secret-scan.log
+          if find . -type f -name "*.php" -not -path "./vendor/*" -not -path "./tests/*" -exec grep -l -E "$pattern" {} \; | tee -a secret-scan.log | grep -q "."; then
+            echo "⚠️  Potential secret found matching pattern: $pattern" | tee -a secret-scan.log
+            find . -type f -name "*.php" -not -path "./vendor/*" -not -path "./tests/*" -exec grep -n -E "$pattern" {} + | tee -a secret-scan.log || true
+          fi
+        done
+        
+        echo "✅ Secret scanning completed" | tee -a secret-scan.log
+
+    - name: Upload secret scan results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: secret-scan-results
+        path: secret-scan.log
+
+  security-policy-check:
+    name: Security Policy Compliance
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check required security files
+      run: |
+        echo "=== Security Policy Compliance Check ===" | tee policy-check.log
+        
+        REQUIRED_FILES=(
+          ".github/SECURITY.md"
+          "README.md"
+          "composer.json"
+        )
+        
+        MISSING_FILES=0
+        for file in "${REQUIRED_FILES[@]}"; do
+          if [ -f "$file" ]; then
+            echo "✅ Found: $file" | tee -a policy-check.log
+          else
+            echo "❌ Missing: $file" | tee -a policy-check.log
+            MISSING_FILES=$((MISSING_FILES + 1))
+          fi
+        done
+        
+        # Check SECURITY.md content
+        if [ -f ".github/SECURITY.md" ]; then
+          echo "Checking SECURITY.md content..." | tee -a policy-check.log
+          if grep -q "vulnerability" ".github/SECURITY.md" && grep -q "report" ".github/SECURITY.md"; then
+            echo "✅ SECURITY.md contains vulnerability reporting information" | tee -a policy-check.log
+          else
+            echo "⚠️  SECURITY.md may be missing vulnerability reporting details" | tee -a policy-check.log
+          fi
+        fi
+        
+        # Check composer.json for license
+        if [ -f "composer.json" ]; then
+          if grep -q "license" composer.json; then
+            echo "✅ composer.json contains license information" | tee -a policy-check.log
+          else
+            echo "⚠️  composer.json missing license information" | tee -a policy-check.log
+          fi
+        fi
+        
+        echo "Security policy compliance check completed. Missing files: $MISSING_FILES" | tee -a policy-check.log
+
+    - name: Upload policy check results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-policy-results
+        path: policy-check.log

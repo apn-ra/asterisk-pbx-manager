@@ -1,0 +1,31 @@
+# These are supported funding model platforms
+
+# GitHub Sponsors username (replace with actual username when available)
+github: # [your-github-username]
+
+# Patreon username
+patreon: # your-patreon-username
+
+# Open Collective username  
+open_collective: # asterisk-pbx-manager
+
+# Ko-fi username
+ko_fi: # your-kofi-username
+
+# Tidelift subscription URL
+tidelift: # npm/asterisk-pbx-manager
+
+# Community Bridge (LFX) project name
+community_bridge: # asterisk-pbx-manager
+
+# Liberapay username
+liberapay: # your-liberapay-username
+
+# IssueHunt username
+issuehunt: # your-issuehunt-username
+
+# Otechie username
+otechie: # your-otechie-username
+
+# Buy Me A Coffee username  
+custom: # ["https://www.buymeacoffee.com/your-username", "https://paypal.me/your-paypal"]

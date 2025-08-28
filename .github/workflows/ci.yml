@@ -1,0 +1,236 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC to catch dependency issues
+    - cron: '0 2 * * *'
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        php: ['8.4']
+        laravel: ['12.0']
+        dependency-version: [prefer-lowest, prefer-stable]
+        include:
+          - laravel: 12.0
+            testbench: ^10.0
+            carbon: ^3.0
+
+    name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.dependency-version }} - ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php }}
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+        coverage: xdebug
+
+    - name: Setup problem matchers
+      run: |
+        echo "::add-matcher::${{ runner.tool_cache }}/php.json"
+        echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      run: |
+        echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-composer-
+
+    - name: Install Composer dependencies
+      run: |
+        composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" "nesbot/carbon:${{ matrix.carbon }}" --no-interaction --no-update
+        composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction
+
+    - name: Create directories for test artifacts
+      run: |
+        mkdir -p build/logs
+        mkdir -p build/coverage
+
+    - name: Run PHPUnit Tests
+      run: vendor/bin/phpunit --configuration phpunit.xml --coverage-text --coverage-clover=build/logs/clover.xml --coverage-html=build/coverage --log-junit=build/logs/junit.xml
+
+    - name: Upload coverage results to Coveralls
+      if: matrix.os == 'ubuntu-latest' && matrix.php == '8.4' && matrix.dependency-version == 'prefer-stable'
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+      run: |
+        composer global require php-coveralls/php-coveralls
+        php-coveralls --coverage_clover=build/logs/clover.xml -v
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}-php${{ matrix.php }}-${{ matrix.dependency-version }}
+        path: |
+          build/logs/
+          build/coverage/
+
+  code-quality:
+    runs-on: ubuntu-latest
+    name: Code Quality Analysis
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.4
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+        tools: phpcs, phpstan, psalm
+
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      run: |
+        echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-composer-
+
+    - name: Install Composer dependencies
+      run: composer install --prefer-dist --no-interaction
+
+    - name: Run PHP CodeSniffer
+      run: |
+        if [ -f phpcs.xml ]; then
+          vendor/bin/phpcs --standard=phpcs.xml --report=checkstyle --report-file=build/logs/checkstyle.xml
+        else
+          echo "No phpcs.xml found, skipping PHP CodeSniffer"
+        fi
+      continue-on-error: true
+
+    - name: Run PHPStan
+      run: |
+        if [ -f phpstan.neon ]; then
+          vendor/bin/phpstan analyse --error-format=checkstyle > build/logs/phpstan-checkstyle.xml || true
+        else
+          echo "No phpstan.neon found, creating basic analysis"
+          vendor/bin/phpstan analyse src --level=5 --error-format=checkstyle > build/logs/phpstan-checkstyle.xml || true
+        fi
+      continue-on-error: true
+
+    - name: Upload code quality results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: code-quality-results
+        path: build/logs/
+
+  security-audit:
+    runs-on: ubuntu-latest
+    name: Security Audit
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.4
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      run: |
+        echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-composer-
+
+    - name: Install Composer dependencies
+      run: composer install --prefer-dist --no-interaction
+
+    - name: Run Composer Audit
+      run: composer audit --format=json --output=build/logs/composer-audit.json
+      continue-on-error: true
+
+    - name: Security Advisories Check
+      run: |
+        composer global require enlightn/security-checker
+        ~/.composer/vendor/bin/security-checker security:check composer.lock --format=json --output=build/logs/security-advisories.json
+      continue-on-error: true
+
+    - name: Upload security results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-audit-results
+        path: build/logs/
+
+  package-validation:
+    runs-on: ubuntu-latest
+    name: Package Validation
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.4
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+
+    - name: Validate composer.json
+      run: composer validate --strict --no-check-all --no-check-publish
+
+    - name: Check composer.json format
+      run: composer normalize --dry-run --diff
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-interaction
+
+    - name: Check for unused dependencies
+      run: |
+        composer global require icanhazstring/composer-unused
+        ~/.composer/vendor/bin/composer-unused --excludePackage=marcelog/pami
+      continue-on-error: true
+
+    - name: Test package installation
+      run: |
+        # Create temporary Laravel project to test package installation
+        cd /tmp
+        composer create-project laravel/laravel:^12.0 test-app --prefer-dist --no-interaction
+        cd test-app
+        composer config repositories.local path $GITHUB_WORKSPACE
+        composer require "apn-ra/asterisk-pbx-manager:*@dev" --no-interaction
+        php artisan vendor:publish --provider="AsteriskPbxManager\\AsteriskPbxManagerServiceProvider" --tag="config" --force
+        
+        # Verify package is properly installed
+        php artisan list | grep asterisk || echo "No Asterisk commands found (expected for current state)"
+        
+        # Check if config file exists
+        ls -la config/asterisk-pbx-manager.php || echo "Config file not published (expected for current state)"

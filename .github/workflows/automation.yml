@@ -1,0 +1,399 @@
+name: Repository Automation
+
+on:
+  issues:
+    types: [opened, edited, labeled, unlabeled]
+  pull_request:
+    types: [opened, edited, labeled, unlabeled, synchronize]
+  issue_comment:
+    types: [created]
+  schedule:
+    # Run stale issue cleanup weekly on Sundays at 1 AM UTC
+    - cron: '0 1 * * 0'
+
+jobs:
+  label-issues:
+    runs-on: ubuntu-latest
+    name: Auto-label Issues and PRs
+    if: github.event_name != 'schedule'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Auto-label issues based on content
+      uses: actions/github-script@v7
+      if: github.event_name == 'issues' && github.event.action == 'opened'
+      with:
+        script: |
+          const issue = context.payload.issue;
+          const title = issue.title.toLowerCase();
+          const body = issue.body ? issue.body.toLowerCase() : '';
+          const labels = [];
+
+          // Component-based labeling
+          if (title.includes('ami') || body.includes('asterisk manager') || body.includes('pami')) {
+            labels.push('component:ami');
+          }
+          if (title.includes('queue') || body.includes('queue')) {
+            labels.push('component:queue');
+          }
+          if (title.includes('event') || body.includes('event')) {
+            labels.push('component:events');
+          }
+          if (title.includes('call') || body.includes('originate') || body.includes('hangup')) {
+            labels.push('component:calls');
+          }
+          if (title.includes('config') || body.includes('configuration')) {
+            labels.push('component:config');
+          }
+          if (title.includes('test') || body.includes('phpunit') || body.includes('testing')) {
+            labels.push('component:testing');
+          }
+          if (title.includes('doc') || body.includes('documentation') || body.includes('readme')) {
+            labels.push('component:docs');
+          }
+
+          // Severity/Priority labeling
+          if (title.includes('critical') || title.includes('urgent') || body.includes('critical') || body.includes('production')) {
+            labels.push('priority:high');
+          }
+          if (title.includes('security') || body.includes('vulnerability') || body.includes('security')) {
+            labels.push('security');
+          }
+          if (title.includes('performance') || body.includes('slow') || body.includes('memory')) {
+            labels.push('performance');
+          }
+
+          // Asterisk version labeling
+          if (body.includes('asterisk 16') || body.includes('asterisk version: 16')) {
+            labels.push('asterisk:16.x');
+          }
+          if (body.includes('asterisk 18') || body.includes('asterisk version: 18')) {
+            labels.push('asterisk:18.x');
+          }
+          if (body.includes('asterisk 19') || body.includes('asterisk version: 19')) {
+            labels.push('asterisk:19.x');
+          }
+          if (body.includes('asterisk 20') || body.includes('asterisk version: 20')) {
+            labels.push('asterisk:20.x');
+          }
+          if (body.includes('asterisk 21') || body.includes('asterisk version: 21')) {
+            labels.push('asterisk:21.x');
+          }
+
+          // OS labeling
+          if (body.includes('windows') || body.includes('win32')) {
+            labels.push('os:windows');
+          }
+          if (body.includes('ubuntu') || body.includes('linux') || body.includes('debian')) {
+            labels.push('os:linux');
+          }
+          if (body.includes('macos') || body.includes('darwin')) {
+            labels.push('os:macos');
+          }
+
+          // Apply labels if any were found
+          if (labels.length > 0) {
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: labels
+            });
+            
+            console.log(`Applied labels: ${labels.join(', ')}`);
+          }
+
+    - name: Auto-label pull requests based on files changed
+      uses: actions/github-script@v7
+      if: github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'synchronize')
+      with:
+        script: |
+          const { owner, repo } = context.repo;
+          const pr = context.payload.pull_request;
+          
+          // Get list of changed files
+          const { data: files } = await github.rest.pulls.listFiles({
+            owner,
+            repo,
+            pull_number: pr.number
+          });
+          
+          const labels = new Set();
+          
+          for (const file of files) {
+            const filename = file.filename;
+            
+            // Component-based labeling
+            if (filename.startsWith('src/Services/')) {
+              labels.add('component:services');
+            }
+            if (filename.startsWith('src/Events/') || filename.startsWith('src/Listeners/')) {
+              labels.add('component:events');
+            }
+            if (filename.startsWith('src/Commands/')) {
+              labels.add('component:commands');
+            }
+            if (filename.startsWith('src/Models/') || filename.startsWith('src/Migrations/')) {
+              labels.add('component:database');
+            }
+            if (filename.startsWith('src/Config/')) {
+              labels.add('component:config');
+            }
+            if (filename.startsWith('src/Exceptions/')) {
+              labels.add('component:exceptions');
+            }
+            if (filename.startsWith('tests/')) {
+              labels.add('component:testing');
+            }
+            if (filename.startsWith('docs/') || filename === 'README.md') {
+              labels.add('component:docs');
+            }
+            if (filename === 'composer.json' || filename === 'composer.lock') {
+              labels.add('dependencies');
+            }
+            if (filename.startsWith('.github/workflows/')) {
+              labels.add('github-actions');
+            }
+            
+            // Breaking change detection
+            if (filename.startsWith('src/') && (file.status === 'removed' || 
+                file.changes > 50 || filename.includes('Interface') || filename.includes('Contract'))) {
+              labels.add('breaking-change');
+            }
+          }
+          
+          // Apply labels
+          if (labels.size > 0) {
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: pr.number,
+              labels: Array.from(labels)
+            });
+            
+            console.log(`Applied labels: ${Array.from(labels).join(', ')}`);
+          }
+
+  stale-management:
+    runs-on: ubuntu-latest
+    name: Manage Stale Issues and PRs
+    if: github.event_name == 'schedule'
+    
+    steps:
+    - name: Mark stale issues and PRs
+      uses: actions/stale@v9
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        
+        # Stale issue configuration
+        stale-issue-message: |
+          This issue has been automatically marked as stale because it has not had recent activity. 
+          
+          **For Asterisk PBX Manager Issues:**
+          - If this is still a valid issue, please add a comment with updated information
+          - Include current Asterisk version, AMI configuration details, and any error logs
+          - If you've found a workaround, please share it with the community
+          
+          This issue will be closed in 7 days if no further activity occurs.
+        
+        stale-issue-label: 'stale'
+        days-before-stale: 60
+        days-before-close: 7
+        
+        # Stale PR configuration  
+        stale-pr-message: |
+          This pull request has been automatically marked as stale because it has not had recent activity.
+          
+          **For Asterisk PBX Manager PRs:**
+          - Please rebase your branch if there are conflicts
+          - Update tests if the codebase has changed significantly
+          - Ensure all CI checks are passing
+          - Add a comment if you need help completing this PR
+          
+          This PR will be closed in 14 days if no further activity occurs.
+        
+        stale-pr-label: 'stale'
+        days-before-pr-stale: 45
+        days-before-pr-close: 14
+        
+        # Labels to exempt from stale marking
+        exempt-issue-labels: 'pinned,security,critical,priority:high,help-wanted,good-first-issue'
+        exempt-pr-labels: 'pinned,security,work-in-progress,blocked'
+        
+        # Additional configuration
+        remove-stale-when-updated: true
+        exempt-draft-pr: true
+        ascending: true
+        operations-per-run: 100
+
+  welcome-contributors:
+    runs-on: ubuntu-latest
+    name: Welcome New Contributors
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    
+    steps:
+    - name: Welcome first-time contributors
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { owner, repo } = context.repo;
+          const pr = context.payload.pull_request;
+          const author = pr.user.login;
+          
+          // Check if this is the user's first contribution
+          const { data: pullRequests } = await github.rest.pulls.list({
+            owner,
+            repo,
+            state: 'all',
+            per_page: 100
+          });
+          
+          const authorPRs = pullRequests.filter(p => p.user.login === author);
+          
+          if (authorPRs.length === 1) {
+            // This is their first PR
+            const welcomeMessage = `
+            🎉 **Welcome to the Asterisk PBX Manager project!** Thank you for your first contribution!
+            
+            Here are a few things to help you get started:
+            
+            ### Before Your PR is Merged
+            - [ ] Make sure all CI checks are passing
+            - [ ] Ensure your code follows our coding standards
+            - [ ] Add or update tests for your changes
+            - [ ] Update documentation if needed
+            - [ ] Test with a real Asterisk server if possible
+            
+            ### Asterisk PBX Manager Specific Guidelines
+            - Test AMI connections and events thoroughly
+            - Consider security implications of AMI operations
+            - Follow Laravel package development best practices
+            - Include error handling for telephony scenarios
+            
+            ### Getting Help
+            - Check our [Contributing Guide](CONTRIBUTING.md)
+            - Review [Security Guidelines](.github/SECURITY.md)
+            - Ask questions in the PR comments if needed
+            
+            Thanks again for contributing! 🚀
+            `;
+            
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pr.number,
+              body: welcomeMessage
+            });
+            
+            // Add first-time-contributor label
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: pr.number,
+              labels: ['first-time-contributor']
+            });
+          }
+
+  issue-commands:
+    runs-on: ubuntu-latest
+    name: Handle Issue Commands
+    if: github.event_name == 'issue_comment' && github.event.action == 'created'
+    
+    steps:
+    - name: Process issue commands
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const comment = context.payload.comment;
+          const issue = context.payload.issue;
+          const commenter = comment.user.login;
+          const commentBody = comment.body.trim();
+          
+          // Only process commands from maintainers/collaborators
+          const { data: collaborator } = await github.rest.repos.getCollaboratorPermissionLevel({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            username: commenter
+          }).catch(() => ({ data: { permission: 'none' } }));
+          
+          const hasPermission = ['admin', 'write', 'maintain'].includes(collaborator.permission);
+          
+          if (!hasPermission) {
+            return;
+          }
+          
+          // Handle /label command
+          if (commentBody.startsWith('/label ')) {
+            const labelName = commentBody.replace('/label ', '').trim();
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: [labelName]
+            });
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: `✅ Added label: \`${labelName}\``
+            });
+          }
+          
+          // Handle /unlabel command
+          if (commentBody.startsWith('/unlabel ')) {
+            const labelName = commentBody.replace('/unlabel ', '').trim();
+            
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              name: labelName
+            }).catch(error => {
+              console.log(`Label ${labelName} not found or already removed`);
+            });
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: `✅ Removed label: \`${labelName}\``
+            });
+          }
+          
+          // Handle /close command
+          if (commentBody === '/close') {
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              state: 'closed'
+            });
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: '✅ Issue closed by maintainer command.'
+            });
+          }
+          
+          // Handle /reopen command
+          if (commentBody === '/reopen') {
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              state: 'open'
+            });
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: '✅ Issue reopened by maintainer command.'
+            });
+          }
