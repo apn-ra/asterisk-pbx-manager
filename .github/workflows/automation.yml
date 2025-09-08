@@ -27,7 +27,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Auto-label issues based on content
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       if: github.event_name == 'issues' && github.event.action == 'opened'
       with:
         script: |
@@ -111,7 +111,7 @@ jobs:
           }
 
     - name: Auto-label pull requests based on files changed
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       if: github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'synchronize')
       with:
         script: |
@@ -240,7 +240,7 @@ jobs:
     
     steps:
     - name: Welcome first-time contributors
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const { owner, repo } = context.repo;
@@ -308,7 +308,7 @@ jobs:
     
     steps:
     - name: Process issue commands
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const comment = context.payload.comment;
